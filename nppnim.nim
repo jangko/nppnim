@@ -1,4 +1,4 @@
-import winapi, scintilla, nppmsg, menucmdid, ilexer, lexaccessor
+import winapi, scintilla, nppmsg, menucmdid, ilexer, lexaccessor, stylecontext
 
 const
   nbChar = 64
@@ -125,7 +125,11 @@ proc setInfo(nd: NppDataCopy) {.cdecl, exportc, dynlib.} =
 let
   pluginName = WC("Nim Lexer")
 
-proc getName(): ptr TCHAR {.cdecl, exportc, dynlib.} = pluginName
+proc getName(): ptr TCHAR {.cdecl, exportc, dynlib.} = 
+  when defined(winUnicode):
+    result = pluginName
+  else:
+    result = cast[ptr TCHAR](pluginName.cstring)
 
 proc getFuncsArray(n: ptr int): ptr FuncItem {.cdecl, exportc, dynlib.} =
   n[] = nbFunc
@@ -140,32 +144,56 @@ proc isUnicode(): WINBOOL {.cdecl, exportc, dynlib.} = TRUE
 
 const
   # Style constants 0..31 max. Correspond to npp.xml settings.
-  DefaultStyle = 0
-  KeywordStyle = 1
-  FlowBreakerStyle = 2
-  UnsafeStyle = 3
-  NumberStyle = 4
-  StringStyle = 5
-  CommentStyle = 6
-  PragmaStyle = 7
-  ErrorStyle = 8
+  NIM_DEFAULT = 0
+  NIM_KEYWORD = 1
+  NIM_FLOW_BREAKER = 2
+  NIM_UNSAFE  = 3
+  NIM_NUMBER  = 4
+  NIM_STRING  = 5
+  NIM_COMMENT = 6
+  NIM_PRAGMA  = 7
+  NIM_ERROR   = 8
+  
+proc Version(x: pointer): int {.stdcall.} = 
+  result = lvOriginal
+  discard messageBox(NULL, "Hello, Notepad++!", "Notepad++ Plugin Template", MB_OK)
+  
+proc Release(x: pointer) {.stdcall.} = discard
+proc PropertyNames(x: pointer): cstring {.stdcall.} = nil
+proc PropertyType(x: pointer, name: cstring): int {.stdcall.} = -1
+proc DescribeProperty(x: pointer, name: cstring): cstring {.stdcall.} = nil
+proc PropertySet(x: pointer, key, val: cstring): int {.stdcall.} = -1
+proc DescribeWordListSets(x: pointer): cstring {.stdcall.} = nil
+proc WordListSet(x: pointer, n: int, wl: cstring): int {.stdcall.} = -1
 
-proc Version(): int {.stdcall.} = lvOriginal
-proc Release() {.stdcall.} = discard
-proc PropertyNames(): cstring {.stdcall.} = nil
-proc PropertyType(name: cstring): int {.stdcall.} = -1
-proc DescribeProperty(name: cstring): cstring {.stdcall.} = nil
-proc PropertySet(key, val: cstring): Sci_Position {.stdcall.} = -1
-proc DescribeWordListSets(): cstring {.stdcall.} = nil
-proc WordListSet(n: int, wl: cstring): Sci_Position {.stdcall.} = -1
-
-proc Lex(startPos, lengthDoc: Sci_PositionU, initStyle: int, pAccess: ptr IDocument) {.stdcall.} =
+proc Lex(x: pointer, startPos, lengthDoc: int, initStyle: int, pAccess: ptr IDocument) {.stdcall.} =
+  #var 
+  #  styler = newLexAccessor(pAccess)
+  #  ctx = newStyleContext(startPos, lengthDoc, initStyle, styler)
+  #  
+  #while ctx.more():
+  #  case ctx.state
+  #  of NIM_DEFAULT:
+  #    if ctx.match('#', '['):
+  #      ctx.setState(NIM_COMMENT)
+  #      ctx.forward() #Move over the #
+  #
+  #  of NIM_COMMENT:
+  #    if ctx.match(']', '#'):
+  #      ctx.forward() #Move over the ]
+  #      ctx.forwardSetState(NIM_DEFAULT)
+  #      
+  #  else:
+  #    discard
+  #    
+  #  ctx.forward()
+  #ctx.complete()
   discard
 
-proc Fold(startPos, lengthDoc: Sci_PositionU, initStyle: int, pAccess: ptr IDocument) {.stdcall.} =
+proc Fold(x: pointer, startPos, lengthDoc: int, initStyle: int, pAccess: ptr IDocument) {.stdcall.} =
   discard
 
-proc PrivateCall(operation: int, ud: pointer): pointer {.stdcall.} = nil
+proc PrivateCall(x: pointer, operation: int, ud: pointer): pointer {.stdcall.} = nil
 
 proc copyToBuff(str: string; buff: ptr TCHAR; len: int) =
   var
@@ -181,17 +209,21 @@ proc copyToBuff(str: string; buff: ptr TCHAR; len: int) =
     inc buflen
     copyMem(buff, src.unsafeAddr, sizeof(TCHAR) * buflen)
 
-proc getLexerCount(): int {.stdcall, exportc, dynlib.} = 1
+proc GetLexerCount(): int {.stdcall, exportc, dynlib.} = 
+  result = 1
 
-proc getLexerName(idx: int, name: ptr TCHAR, nameLen: int) {.stdcall, exportc, dynlib.} =
-  copyToBuff("Nim", name, nameLen)
+proc GetLexerName(idx: int, name: pointer, nameLen: int) {.stdcall, exportc, dynlib.} =
+  let str = "Nim"
+  let len = min(str.len, nameLen-1)
+  copyMem(name, str.cstring, len+1)
 
-proc getLexerStatusText(idx: int, desc: ptr TCHAR, descLen: int) {.stdcall, exportc, dynlib.} =
+proc GetLexerStatusText(idx: int, desc: ptr TCHAR, descLen: int) {.stdcall, exportc, dynlib.} =
   copyToBuff("Nim Lang", desc, descLen)
 
 var lexer: ILexer
+var lex: ILex
 
-proc lexFactory(): ptr ILexer {.stdcall.} =
+proc lexFactory(): ptr ILex {.stdcall.} =
   lexer.version = Version
   lexer.release = Release
   lexer.propNames = PropertyNames
@@ -203,8 +235,8 @@ proc lexFactory(): ptr ILexer {.stdcall.} =
   lexer.lex = Lex
   lexer.fold = Fold
   lexer.privateCall = PrivateCall
-  result = lexer.addr
+  lex.vTable = lexer.addr
+  result = lex.addr
 
 proc GetLexerFactory(idx: int): LexerFactoryProc {.stdcall, exportc, dynlib.} =
   result = lexFactory
-

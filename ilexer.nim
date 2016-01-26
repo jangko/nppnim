@@ -25,24 +25,24 @@ type
     getLineIndentation*: proc(line: int): int {.stdcall.}
 
   ILexer* {.pure.} = object of RootObj
-    version*: proc(): int {.stdcall.}
-    release*: proc() {.stdcall.}
-    propNames*: proc(): cstring {.stdcall.}
-    propType*: proc(name: cstring): int {.stdcall.}
-    descProp*: proc(name: cstring): cstring {.stdcall.}
-    propSet*: proc(key, val: cstring): int {.stdcall.}
-    descWordListSets*: proc(): cstring {.stdcall.}
-    wordListSet*: proc(n: int, wl: cstring): int {.stdcall.}
-    lex*: proc(startPos, lengthDoc: int, initStyle: int, pAccess: ptr IDocument) {.stdcall.}
-    fold*: proc(startPos, lengthDoc: int, initStyle: int, pAccess: ptr IDocument) {.stdcall.}
-    privateCall*: proc(operation: int, ud: pointer): pointer {.stdcall.}
+    version*: proc(x: pointer): int {.stdcall.}
+    release*: proc(x: pointer) {.stdcall.}
+    propNames*: proc(x: pointer): cstring {.stdcall.}
+    propType*: proc(x: pointer, name: cstring): int {.stdcall.}
+    descProp*: proc(x: pointer, name: cstring): cstring {.stdcall.}
+    propSet*: proc(x: pointer, key, val: cstring): int {.stdcall.}
+    descWordListSets*: proc(x: pointer): cstring {.stdcall.}
+    wordListSet*: proc(x: pointer, n: int, wl: cstring): int {.stdcall.}
+    lex*: proc(x: pointer, startPos, lengthDoc: int, initStyle: int, pAccess: ptr IDocument) {.stdcall.}
+    fold*: proc(x: pointer, startPos, lengthDoc: int, initStyle: int, pAccess: ptr IDocument) {.stdcall.}
+    privateCall*: proc(x: pointer, operation: int, ud: pointer): pointer {.stdcall.}
 
-  IDocumentWithLineEnd* = object of IDocument
+  IDocumentWithLineEnd* {.pure.} = object of IDocument
     lineEnd*: proc(line: int): int {.stdcall.}
     getRelativePosition*: proc(start, offset: int): int {.stdcall.}
     getCharacterAndWidth*: proc(pos: int, pWidth: var int): int {.stdcall.}
 
-  ILexerWithSubStyles* = object of ILexer
+  ILexerWithSubStyles* {.pure.} = object of ILexer
     lineEndTypesSupported*: proc(): int {.stdcall.}
     allocateSubStyles*: proc(styleBase, numberStyles: int): int {.stdcall.}
     subStylesStart*: proc(styleBase: int): int {.stdcall.}
@@ -54,7 +54,10 @@ type
     distanceToSecondaryStyles*: proc(): int {.stdcall.}
     getSubStyleBases*: proc(): cstring {.stdcall.}
 
-  LexerFactoryProc* = proc(): ptr ILexer {.stdcall.}
+  ILex* {.pure.} = object
+    vTable*: ptr ILexer
+    
+  LexerFactoryProc* = proc(): ptr ILex {.stdcall.}
 
 const
   #IDocument version

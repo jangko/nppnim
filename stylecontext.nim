@@ -18,7 +18,7 @@ type
     lineStartNext: int
     atLineStart: bool
     atLineEnd: bool
-    state: int
+    state*: int
     chPrev: int
     ch: int
     width: int
