@@ -1,9 +1,9 @@
 import winapi
 
 type
-  Sci_Position = cint   #Basic signed type used throughout interface
-  Sci_PositionU = cuint #Unsigned variant used for ILexer::Lex and ILexer::Fold
-  Sci_PositionCR = clong #For Sci_CharacterRange  which is defined as long to be compatible with Win32 CHARRANGE
+  Sci_Position* = cint   #Basic signed type used throughout interface
+  Sci_PositionU* = cuint #Unsigned variant used for ILexer::Lex and ILexer::Fold
+  Sci_PositionCR* = clong #For Sci_CharacterRange  which is defined as long to be compatible with Win32 CHARRANGE
 
 # Here should be placed typedefs for uptr_t, an unsigned integer type large enough to
 #  hold a pointer and sptr_t, a signed integer large enough to hold a pointer.
@@ -1128,11 +1128,11 @@ type
   SciHandle* = object
     hnd: sptr_t
     send: SciFnDirect
-   
-  Cell* {.pure,final.} = object 
+
+  Cell* {.pure,final.} = object
     style: uint8
     ch: char
-    
+
 # Text retrieval and modification
 proc scisend(sci: SciHandle; iMessage: int; wParam = 0; lParam: sptr_t = 0): sptr_t {.discardable.} =
   result = sci.send(sci.hnd, iMessage.cuint, wParam.uptr_t, lParam)
@@ -1149,7 +1149,7 @@ proc setSavePoint*(sci: SciHandle) =
 
 proc getLineLength*(sci: SciHandle, line: int): int =
   result = sci.scisend(SCI_GETLINEENDPOSITION, line) - sci.scisend(SCI_POSITIONFROMLINE, line)
-    
+
 proc getLine*(sci: SciHandle; line: int): string =
   let len = sci.getLineLength(line)
   result = newString(len)
@@ -1162,13 +1162,13 @@ proc setReadOnly*(sci: SciHandle; readOnly: bool) =
   sci.scisend(SCI_SETREADONLY, ord(readOnly))
 
 proc getReadOnly*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETREADONLY) == 1
+  result = sci.scisend(SCI_GETREADONLY) != 0
 
 proc getTextRange*(sci: SciHandle; fr, to: int): string =
-  var 
+  var
     tr: TextRange
     textlen: int
-    
+
   tr.chrg.cpMin = fr.Sci_PositionCR
   tr.chrg.cpMax = to.Sci_PositionCR
   if to == -1:
@@ -1176,7 +1176,7 @@ proc getTextRange*(sci: SciHandle; fr, to: int): string =
     textlen = doclen - fr
   else:
     textlen = to - fr
-  
+
   result = newString(textlen)
   tr.lpstrText =  result.cstring
   sci.scisend(SCI_GETTEXTRANGE, 0, cast[sptr_t](tr.addr))
@@ -1205,7 +1205,7 @@ proc clearDocumentStyle*(sci: SciHandle) =
 proc getCharAt*(sci: SciHandle; pos: int): char =
   result = sci.scisend(SCI_GETCHARAT, pos).chr
 
-proc getStyleAt*(sci: SciHandle; pos: int): int = 
+proc getStyleAt*(sci: SciHandle; pos: int): int =
   result = sci.scisend(SCI_GETSTYLEAT, pos)
 
 proc setStyleBits*(sci: SciHandle; bits: int) =
@@ -1220,7 +1220,7 @@ proc undo*(sci: SciHandle) =
   sci.scisend(SCI_UNDO)
 
 proc canUndo*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_CANUNDO) == 1
+  result = sci.scisend(SCI_CANUNDO) != 0
 
 proc emptyUndoBuffer*(sci: SciHandle) =
   sci.scisend(SCI_EMPTYUNDOBUFFER)
@@ -1229,13 +1229,13 @@ proc redo*(sci: SciHandle) =
   sci.scisend(SCI_REDO)
 
 proc canRedo*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_CANREDO) == 1
+  result = sci.scisend(SCI_CANREDO) != 0
 
 proc setUndoCollection*(sci: SciHandle; collectUndo: bool) =
   sci.scisend(SCI_SETUNDOCOLLECTION, ord(collectUndo))
 
 proc getUndoCollection*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETUNDOCOLLECTION) == 1
+  result = sci.scisend(SCI_GETUNDOCOLLECTION) != 0
 
 proc beginUndoAction*(sci: SciHandle) =
   sci.scisend(SCI_BEGINUNDOACTION)
@@ -1260,8 +1260,8 @@ proc getFirstVisibleLine*(sci: SciHandle): int =
 proc linesOnScreen*(sci: SciHandle): int =
   result = sci.scisend(SCI_LINESONSCREEN)
 
-proc getModify*(sci: SciHandle): bool = 
-  result = sci.scisend(SCI_GETMODIFY) == 1
+proc getModify*(sci: SciHandle): bool =
+  result = sci.scisend(SCI_GETMODIFY) != 0
 
 proc setSel*(sci: SciHandle; start, stop: int) =
   sci.scisend(SCI_SETSEL, start, stop.sptr_t)
@@ -1312,10 +1312,10 @@ proc lineLength*(sci: SciHandle; line: int): int =
   result = sci.scisend(SCI_LINELENGTH, line)
 
 proc getSelText*(sci: SciHandle): string =
-  let 
+  let
     start = sci.getSelectionStart()
     stop = sci.getSelectionEnd()
-  
+
   result = newString(stop - start)
   sci.scisend(SCI_GETSELTEXT, 0, cast[sptr_t](result.cstring))
 
@@ -1324,7 +1324,7 @@ proc getCurLine*(sci: SciHandle; len: int): string =
   sci.scisend(SCI_GETCURLINE, len, cast[sptr_t](result.cstring))
 
 proc selectionIsRectangle*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_SELECTIONISRECTANGLE) == 1
+  result = sci.scisend(SCI_SELECTIONISRECTANGLE) != 0
 
 proc setSelectionMode*(sci: SciHandle; mode: int) =
   # cf. selModeXXX contants
@@ -1391,13 +1391,13 @@ proc setMultipleSelection*(sci: SciHandle; value: bool) =
   sci.scisend(SCI_SETMULTIPLESELECTION, ord(value))
 
 proc getMultipleSelection*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETMULTIPLESELECTION) == 1
+  result = sci.scisend(SCI_GETMULTIPLESELECTION) != 0
 
 proc setAdditionalSelectionTyping*(sci: SciHandle; value: bool) =
   sci.scisend(SCI_SETADDITIONALSELECTIONTYPING, ord(value))
 
 proc getAdditionalSelectionTyping*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETADDITIONALSELECTIONTYPING) == 1
+  result = sci.scisend(SCI_GETADDITIONALSELECTIONTYPING) != 0
 
 proc setVirtualSpaceOptions*(sci: SciHandle; virtualSpaceOptions: int) =
   sci.scisend(SCI_SETVIRTUALSPACEOPTIONS, virtualSpaceOptions)
@@ -1511,7 +1511,7 @@ proc setAdditionalCaretsBlink*(sci: SciHandle; value: bool) =
   sci.scisend(SCI_SETADDITIONALCARETSBLINK, ord(value))
 
 proc getAdditionalCaretsBlink*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETADDITIONALCARETSBLINK) == 1
+  result = sci.scisend(SCI_GETADDITIONALCARETSBLINK) != 0
 
 proc swapMainAnchorCaret*(sci: SciHandle) =
   sci.scisend(SCI_SWAPMAINANCHORCARET)
@@ -1540,13 +1540,13 @@ proc setHScrollBar*(sci: SciHandle; visible: bool) =
   sci.scisend(SCI_SETHSCROLLBAR, ord(visible))
 
 proc getHScrollBar*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETHSCROLLBAR) == 1
+  result = sci.scisend(SCI_GETHSCROLLBAR) != 0
 
 proc setVScrollBar*(sci: SciHandle; visible: bool) =
   sci.scisend(SCI_SETVSCROLLBAR, ord(visible))
 
 proc getVScrollBar*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETVSCROLLBAR) == 1
+  result = sci.scisend(SCI_GETVSCROLLBAR) != 0
 
 proc setXOffset*(sci: SciHandle; xOffset: int) =
   sci.scisend(SCI_SETXOFFSET, xOffset)
@@ -1564,13 +1564,13 @@ proc setScrollWidthTracking*(sci: SciHandle; tracking: bool) =
   sci.scisend(SCI_SETSCROLLWIDTHTRACKING, ord(tracking))
 
 proc getScrollWidthTracking*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETSCROLLWIDTHTRACKING) == 1
+  result = sci.scisend(SCI_GETSCROLLWIDTHTRACKING) != 0
 
 proc setEndAtLastLine*(sci: SciHandle; endAtLastLine: bool) =
   sci.scisend(SCI_SETENDATLASTLINE, ord(endAtLastLine))
 
 proc getEndAtLastLine*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_GETENDATLASTLINE) == 1
+  result = sci.scisend(SCI_GETENDATLASTLINE) != 0
 
 # Styling
 
@@ -1604,7 +1604,7 @@ proc autoCCancel*(sci: SciHandle) =
   sci.scisend(SCI_AUTOCCANCEL)
 
 proc autoCActive*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_AUTOCACTIVE) == 1
+  result = sci.scisend(SCI_AUTOCACTIVE) != 0
 
 proc autoCPosStart*(sci: SciHandle): int =
   result = sci.scisend(SCI_AUTOCPOSSTART)
@@ -1631,7 +1631,7 @@ proc autoCSetCancelAtStart*(sci: SciHandle; cancel: bool) =
   sci.scisend(SCI_AUTOCSETCANCELATSTART, ord(cancel))
 
 proc autoCGetCancelAtStart*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_AUTOCGETCANCELATSTART) == 1
+  result = sci.scisend(SCI_AUTOCGETCANCELATSTART) != 0
 
 proc autoCSetFillUps*(sci: SciHandle; characterSet: string) =
   sci.scisend(SCI_AUTOCSETFILLUPS, 0, cast[sptr_t](characterSet.cstring))
@@ -1640,25 +1640,25 @@ proc autoCSetChooseSingle*(sci: SciHandle; chooseSingle: bool) =
   sci.scisend(SCI_AUTOCSETCHOOSESINGLE, ord(chooseSingle))
 
 proc autoCGetChooseSingle*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_AUTOCGETCHOOSESINGLE) == 1
+  result = sci.scisend(SCI_AUTOCGETCHOOSESINGLE) != 0
 
 proc autoCSetIgnoreCase*(sci: SciHandle; value: bool) =
   sci.scisend(SCI_AUTOCSETIGNORECASE, ord(value))
 
 proc autoCGetIgnoreCase*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_AUTOCGETIGNORECASE) == 1
+  result = sci.scisend(SCI_AUTOCGETIGNORECASE) != 0
 
 proc autoCSetAutoHide*(sci: SciHandle; value: bool) =
   sci.scisend(SCI_AUTOCSETAUTOHIDE, ord(value))
 
 proc autoCGetAutoHide*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_AUTOCGETAUTOHIDE) == 1
+  result = sci.scisend(SCI_AUTOCGETAUTOHIDE) != 0
 
 proc autoCSetDropRestOfWord*(sci: SciHandle; value: bool) =
   sci.scisend(SCI_AUTOCSETDROPRESTOFWORD, ord(value))
 
 proc autoCGetDropRestOfWord*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_AUTOCGETDROPRESTOFWORD) == 1
+  result = sci.scisend(SCI_AUTOCGETDROPRESTOFWORD) != 0
 
 proc registerImage*(sci: SciHandle; typ: int; xpmData: string) =
   sci.scisend(SCI_REGISTERIMAGE, typ, cast[sptr_t](xpmData.cstring))
@@ -1698,7 +1698,7 @@ proc callTipCancel*(sci: SciHandle) =
   sci.scisend(SCI_CALLTIPCANCEL)
 
 proc callTipActive*(sci: SciHandle): bool =
-  result = sci.scisend(SCI_CALLTIPACTIVE) == 1
+  result = sci.scisend(SCI_CALLTIPACTIVE) != 0
 
 proc callTipPosStart*(sci: SciHandle): int =
   result = sci.scisend(SCI_CALLTIPPOSSTART)

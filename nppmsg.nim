@@ -28,7 +28,7 @@ type
     srcModuleName*: ptr TCHAR
     info*: pointer             # defined by plugin
 
-#Here you can find how to use these messages : http://notepad-plus.sourceforge.net/uk/plugins-HOWTO.php 
+#Here you can find how to use these messages : http://notepad-plus.sourceforge.net/uk/plugins-HOWTO.php
 
 const
   VAR_NOT_RECOGNIZED* = 0
@@ -41,7 +41,7 @@ const
   NPP_DIRECTORY* = 7
   CURRENT_LINE* = 8
   CURRENT_COLUMN* = 9
-  
+
   NPPMSG* = (WM_USER + 1000)
   NPPM_GETCURRENTSCINTILLA* = (NPPMSG + 4)
   NPPM_GETCURRENTLANGTYPE* = (NPPMSG + 5)
@@ -75,7 +75,7 @@ const
   STATUSBAR_TYPING_MODE* = 5
   NPPM_GETMENUHANDLE* = (NPPMSG + 25)
   NPPPLUGINMENU* = 0
-  
+
   NPPM_ENCODESCI* = (NPPMSG + 26)
   #ascii file to unicode
   #int NPPM_ENCODESCI(MAIN_VIEW/SUB_VIEW, 0)
@@ -157,7 +157,7 @@ const
 
   NPPM_GETNPPVERSION* = (NPPMSG + 50)
   # int NPPM_GETNPPVERSION(0, 0)
-  # return version 
+  # return version
   # ex : v4.6
   # HIWORD(version) == 4
   # LOWORD(version) == 6
@@ -175,14 +175,14 @@ const
   NPPM_GETPOSFROMBUFFERID* = (NPPMSG + 57)
   # INT NPPM_GETPOSFROMBUFFERID(INT bufferID, 0)
   # Return VIEW|INDEX from a buffer ID. -1 if the bufferID non existing
-  # VIEW takes 2 highest bits and INDEX (0 based) takes the rest (30 bits) 
+  # VIEW takes 2 highest bits and INDEX (0 based) takes the rest (30 bits)
   # Here's the values for the view :
   #  MAIN_VIEW 0
   #  SUB_VIEW  1
 
   NPPM_GETFULLPATHFROMBUFFERID* = (NPPMSG + 58)
   # INT NPPM_GETFULLPATHFROMBUFFERID(INT bufferID, TCHAR *fullFilePath)
-  # Get full path file name from a bufferID. 
+  # Get full path file name from a bufferID.
   # Return -1 if the bufferID non existing, otherwise the number of TCHAR copied/to copy
   # User should call it with fullFilePath be NULL to get the number of TCHAR (not including the nul character),
   # allocate fullFilePath with the return values + 1, then call it again to get  full path file name
@@ -243,7 +243,7 @@ const
   # #define NPPM_REMOVEREBAR (NPPMSG + 59)
   # // BOOL NPPM_ADDREBAR(INT ID, 0)
   # //Use ID assigned with NPPM_ADDREBAR
-  
+
 
   NPPM_HIDETOOLBAR* = (NPPMSG + 70)
   # BOOL NPPM_HIDETOOLBAR(0, BOOL hideOrNot)

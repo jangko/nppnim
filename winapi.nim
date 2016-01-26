@@ -11,41 +11,41 @@ type
   HBRUSH* = HANDLE
   HMODULE* = HANDLE
   HBITMAP* = HANDLE
-  
+
   ATOM* = int16
   DWORD* = int32
   LONG* = int32
   WINUINT* = int32
   WINBOOL* = int32
   UCHAR* = int8
-  
+
   LONG_PTR* = ByteAddress
   WPARAM* = LONG_PTR
   LPARAM* = LONG_PTR
   LRESULT* = LONG_PTR
-  
+
   LPCSTR* = cstring
   LPWSTR* = PWideChar
   LPCWSTR* = PWideChar
   PCWSTR* = PWideChar
   LPVOID* = pointer
   LPDWORD* = ptr DWORD
-  
+
   COLORREF* = DWORD
   LPCOLORREF* = ptr COLORREF
-  
+
   RECT* {.final, pure.} = object
     left*: LONG
     top*: LONG
     right*: LONG
     bottom*: LONG
-    
+
   PRECT* = ptr RECT
   LPRECT* = ptr RECT
-  
+
   WNDPROC* = proc(wnd: HWND, msg: WINUINT, lParam: WPARAM, wParam: LPARAM): LRESULT {.stdcall.}
   TIMERPROC* = proc(para1: HWND, para2: WINUINT, para3: WINUINT, para4: DWORD) {.stdcall.}
-  
+
 when defined(winUnicode):
   type
     LPCTSTR* = PWideChar
@@ -58,8 +58,8 @@ else:
     TBYTE* = uint8
     TCHAR* = char
     BCHAR* = int8
-    
-type    
+
+type
   WNDCLASSW* {.final, pure.} = object
     style*: WINUINT
     lpfnWndProc*: WNDPROC
@@ -71,7 +71,7 @@ type
     hbrBackground*: HBRUSH
     lpszMenuName*: LPCWSTR
     lpszClassName*: LPCWSTR
-  
+
   WNDCLASSA* {.final, pure.} = object
     style*: WINUINT
     lpfnWndProc*: WNDPROC
@@ -86,7 +86,7 @@ type
 
   LPWNDCLASSA = ptr WNDCLASSA
   LPWNDCLASSW = ptr WNDCLASSW
-  
+
   CREATESTRUCT* {.final, pure.} = object
     lpCreateParams*: LPVOID
     hInstance*: HINST
@@ -100,18 +100,18 @@ type
     lpszName*: LPCTSTR
     lpszClass*: LPCTSTR
     dwExStyle*: DWORD
-    
+
   LPCREATESTRUCT* = ptr CREATESTRUCT
   TCREATESTRUCT* = CREATESTRUCT
   PCREATESTRUCT* = ptr CREATESTRUCT
-  
+
   POINT* {.final, pure.} = object
     x*: LONG
     y*: LONG
-  
+
   PPOINT* = ptr POINT
   LPPOINT* = ptr POINT
-  
+
   MSG* {.final, pure.} = object
     hwnd*: HWND
     message*: WINUINT
@@ -121,19 +121,19 @@ type
     pt*: POINT
 
   LPMSG* = ptr MSG
-  
+
 when defined(winUnicode):
-  type 
+  type
     WNDCLASS* = WNDCLASSW
 else:
-  type 
+  type
     WNDCLASS* = WNDCLASSA
 
 const
   TRUE* = 1
   FALSE* = 0
   NULL* = 0
-  
+
   # RTF control
   EM_CANPASTE* = 1074
   EM_CANUNDO* = 198
@@ -212,7 +212,7 @@ const
   EM_STREAMIN* = 1097
   EM_STREAMOUT* = 1098
   EM_UNDO* = 199
-  
+
   # Window messages
   WM_ACTIVATE* = 6
   WM_ACTIVATEAPP* = 28
@@ -565,7 +565,7 @@ const
   DS_SETFONT* = 0x00000040
   DS_SETFOREGROUND* = 0x00000200
   DS_SYSMODAL* = 0x00000002
-  
+
   # CreateWindowEx
   WS_EX_ACCEPTFILES* = 0x00000010
   WS_EX_APPWINDOW* = 0x00040000
@@ -588,7 +588,7 @@ const
   WS_EX_TOPMOST* = 0x00000008
   WS_EX_TRANSPARENT* = 0x00000020
   WS_EX_WINDOWEDGE* = 0x00000100
-  
+
   # ShowWindow
   SW_HIDE* = 0
   SW_MAXIMIZE* = 3
@@ -603,7 +603,7 @@ const
   SW_SHOWNA* = 8
   SW_SHOWNOACTIVATE* = 4
   SW_SHOWNORMAL* = 1
-  
+
   # SetWindowPos, DeferWindowPos
   HWND_BOTTOM*    = HWND(1)
   HWND_NOTOPMOST* = HWND(-2)
@@ -625,7 +625,7 @@ const
   CS_SAVEBITS* = 2048
   CS_VREDRAW* = 1
   DLGWINDOWEXTRA* = 30
-  
+
   # GetWindowLong
   GWL_EXSTYLE* = -20
   GWL_STYLE* = -16
@@ -640,7 +640,7 @@ const
   GWLP_HINSTANCE* = -6
   GWLP_USERDATA* = -21
   GWLP_WNDPROC* = -4
-  
+
   # Virtual Key codes
   VK_LBUTTON* = 1
   VK_RBUTTON* = 2
@@ -762,7 +762,7 @@ const
   VK_RMENU* = 165
   # ImmGetVirtualKey
   VK_PROCESSKEY* = 229
-  
+
   # Keystroke Message Flags
   KF_ALTDOWN* = 8192
   KF_DLGMODE* = 2048
@@ -770,22 +770,22 @@ const
   KF_MENUMODE* = 4096
   KF_REPEAT* = 16384
   KF_UP* = 32768
-  
+
   # GetKeyboardLayoutName
   KL_NAMELENGTH* = 9
-  
+
   # WM_ACTIVATE message
   WA_ACTIVE* = 1
   WA_CLICKACTIVE* = 2
   WA_INACTIVE* = 0
-  
+
   # WM_ACTIVATE message
   PWR_CRITICALRESUME* = 3
   PWR_SUSPENDREQUEST* = 1
   PWR_SUSPENDRESUME* = 2
   PWR_FAIL* = -1
   PWR_OK* = 1
-  
+
   # DllEntryPoint
   DLL_PROCESS_ATTACH* = 1
   DLL_THREAD_ATTACH* = 2
@@ -831,10 +831,10 @@ const
   IDOK* = 1
   IDRETRY* = 4
   IDYES* = 6
-  
+
 proc RGB*(r, g, b: int): COLORREF =
   result = toU32(r) or (toU32(g) shl 8) or (toU32(b) shl 16)
-  
+
 proc RGB*(r, g, b: range[0 .. 255]): COLORREF =
   result = toU32(r) or (toU32(g) shl 8) or (toU32(b) shl 16)
 
@@ -870,7 +870,7 @@ proc MAKELONG*(a, b: int32): LONG =
 
 proc MAKEWORD*(a, b: int32): int16 =
   result = toU16(a and 0xff'i32) or toU16(b shl 8'i32)
-  
+
 when defined(winUniCode):
   proc WC*(s: string): LPCWSTR =
     if s == nil: return cast[LPCWSTR](0)
@@ -878,7 +878,7 @@ when defined(winUniCode):
     result = cast[LPCWSTR](x)
 else:
   template WC*(s: string): cstring = s.cstring
-  
+
 proc SendMessageA*(wnd: HWND, msg: WINUINT, wp: WPARAM, lp: LPARAM): LRESULT {.
     stdcall, dynlib: "user32", importc: "SendMessageA".}
 proc SendMessageW*(wnd: HWND, Msg: WINUINT, wp: WPARAM, lp: LPARAM): LRESULT {.
@@ -887,7 +887,7 @@ proc SendMessageW*(wnd: HWND, Msg: WINUINT, wp: WPARAM, lp: LPARAM): LRESULT {.
 proc sendMessage*(wnd: HWND, msg: WINUINT, wp: WPARAM = 0, lp: LPARAM = 0): LRESULT {.discardable.} =
   when defined(winUnicode): result = SendMessageW(wnd, msg, wp, lp)
   else: result = SendMessageA(wnd, msg, wp, lp)
-  
+
 proc setFocus*(wnd: HWND): HWND {.stdcall, dynlib: "user32", importc: "SetFocus", discardable.}
 
 proc CreateWindowExA(dwExStyle: DWORD, lpClassName: LPCSTR,
@@ -901,7 +901,7 @@ proc CreateWindowExW(dwExStyle: DWORD, lpClassName: LPCWSTR,
                       nWidth, nHeight: cint, hWndParent: HWND,
                       menu: HMENU, hInstance: HINST, lpParam: LPVOID): HWND {.
     stdcall, dynlib: "user32", importc: "CreateWindowExW".}
-    
+
 proc CreateWindowA*(lpClassName: LPCSTR, lpWindowName: LPCSTR, dwStyle: DWORD,
                    X, Y, nWidth, nHeight: cint,
                    hWndParent: HWND, menu: HMENU, hInstance: HINST,
@@ -915,7 +915,7 @@ proc CreateWindowW*(lpClassName: LPCWSTR, lpWindowName: LPCWSTR, dwStyle: DWORD,
                    lpParam: LPVOID): HWND =
   result = CreateWindowExW(0, lpClassName, lpWindowName, dwStyle, X, Y, nWidth,
                            nHeight, hWndParent, menu, hInstance, lpParam)
-                           
+
 proc createWindow*(className, windowName: string, dwStyle: DWORD, X, Y, nWidth, nHeight: int,
                   hwndParent = 0.HWND, hMenu = 0.HMENU, hInstance = 0.HINST, lpParam: LPVOID = nil): HWND =
   when defined(winUnicode):
@@ -924,33 +924,33 @@ proc createWindow*(className, windowName: string, dwStyle: DWORD, X, Y, nWidth, 
   else:
     result = CreateWindowA(className.cstring, windowName.cstring, dwStyle, X.cint, Y.cint, nWidth.cint, nHeight.cint,
       hwndParent, hMenu, hInstance, lpParam)
-     
+
 proc createWindowEx*(dwExStyle: DWORD, className, windowName: string, dwStyle: DWORD, X, Y, nWidth, nHeight: int,
                   hwndParent = 0.HWND, hMenu = 0.HMENU, hInstance = 0.HINST, lpParam: LPVOID = nil): HWND =
   when defined(winUnicode):
-    result = CreateWindowExW(dwExStyle, WC(className), WC(windowName), dwStyle, 
+    result = CreateWindowExW(dwExStyle, WC(className), WC(windowName), dwStyle,
       X.cint, Y.cint, nWidth.cint, nHeight.cint,
       hwndParent, hMenu, hInstance, lpParam)
   else:
-    result = CreateWindowExA(dwExStyle, className.cstring, windowName.cstring, dwStyle, 
+    result = CreateWindowExA(dwExStyle, className.cstring, windowName.cstring, dwStyle,
       X.cint, Y.cint, nWidth.cint, nHeight.cint,
       hwndParent, hMenu, hInstance, lpParam)
-      
+
 proc showWindow*(wnd: HWND, nCmdShow: int32): WINBOOL {.stdcall,
     dynlib: "user32", importc: "ShowWindow", discardable.}
 
 proc getClientRect*(wnd: HWND, lpRect: LPRECT): WINBOOL {.stdcall,
     dynlib: "user32", importc: "GetClientRect", discardable.}
-    
+
 proc getWindowRect*(wnd: HWND, lpRect: LPRECT): WINBOOL {.stdcall,
     dynlib: "user32", importc: "GetWindowRect", discardable.}
 
 proc setWindowPos*(wnd, hWndInsertAfter: HWND, X, Y, cx, cy: int32, uFlags: WINUINT): WINBOOL {.stdcall,
     dynlib: "user32", importc: "SetWindowPos", discardable.}
-    
+
 proc setWindowPos*(wnd, hWndInsertAfter: HWND, rc: RECT, uFlags: WINUINT = 0): WINBOOL {.discardable.} =
   result = setWindowPos(wnd, hWndInsertAfter, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, uFlags)
-  
+
 proc destroyWindow*(wnd: HWND): WINBOOL {.stdcall, dynlib: "user32", importc: "DestroyWindow", discardable.}
 
 proc postQuitMessage*(nExitCode: int32) {.stdcall, dynlib: "user32", importc: "PostQuitMessage".}
@@ -964,41 +964,41 @@ proc DefWindowProcW(wnd: HWND, Msg: WINUINT, wp: WPARAM, lp: LPARAM): LRESULT {.
 template defWindowProc*(wnd: HWND, msg: WINUINT, wp: WPARAM, lp: LPARAM): LRESULT =
   when defined(winUnicode): DefWindowProcW(wnd, msg, wp, lp)
   else: DefWindowProcA(wnd, msg, wp, lp)
-    
+
 proc RegisterClassA*(lpWndClass: LPWNDCLASSA): ATOM {.stdcall, dynlib: "user32",
     importc: "RegisterClassA".}
-    
+
 proc RegisterClassW*(lpWndClass: LPWNDCLASSW): ATOM {.stdcall, dynlib: "user32",
     importc: "RegisterClassW".}
-    
+
 template registerClass*(wndClass: expr): ATOM =
   when defined(winUnicode): RegisterClassW(addr(wndClass))
   else: RegisterClassA(addr(wndClass))
-    
+
 proc GetModuleHandleA(lpModuleName: LPCSTR): HMODULE {.stdcall, dynlib: "kernel32", importc: "GetModuleHandleA".}
 proc GetModuleHandleW(lpModuleName: LPCWSTR): HMODULE {.stdcall, dynlib: "kernel32", importc: "GetModuleHandleW".}
 
 template getModuleHandle*(moduleName: string): HMODULE =
   when defined(winUnicode): GetModuleHandleW(WC(moduleName))
   else: GetModuleHandleA(moduleName.cstring)
-    
+
 proc LoadLibraryA(lpLibFileName: LPCSTR): HINST {.stdcall, dynlib: "kernel32", importc: "LoadLibraryA".}
 proc LoadLibraryW(lpLibFileName: LPCWSTR): HINST {.stdcall, dynlib: "kernel32", importc: "LoadLibraryW".}
 
 template loadLibrary*(libName: string): HINST =
   when defined(winUnicode): LoadLibraryW(WC(libName))
   else: LoadLibraryA(libName.cstring)
-    
+
 proc GetMessageA(lpMsg: LPMSG, wnd: HWND, wMsgFilterMin: WINUINT,
                   wMsgFilterMax: WINUINT): WINBOOL {.stdcall, dynlib: "user32", importc: "GetMessageA".}
-    
+
 proc GetMessageW(lpMsg: LPMSG, wnd: HWND, wMsgFilterMin: WINUINT,
                   wMsgFilterMax: WINUINT): WINBOOL {.stdcall, dynlib: "user32", importc: "GetMessageW".}
-                  
+
 template getMessage*(lpMsg: expr, wnd: HWND, wMsgFilterMin, wMsgFilterMax: WINUINT): expr =
   when defined(winUnicode): GetMessageW(addr(lpMsg), wnd, wMsgFilterMin, wMsgFilterMax) != 0
   else: GetMessageA(addr(lpMsg), wnd, wMsgFilterMin, wMsgFilterMax) != 0
-    
+
 proc TranslateMessage(lpMsg: LPMSG): WINBOOL {.stdcall, dynlib: "user32",
     importc: "TranslateMessage", discardable.}
 
@@ -1011,7 +1011,7 @@ proc DispatchMessageW(lpMsg: LPMSG): int32 {.stdcall, dynlib: "user32", importc:
 template dispatchMessage*(lpMsg: expr): expr =
   when defined(winUnicode): DispatchMessageW(addr(lpMsg))
   else: DispatchMessageA(addr(lpMsg))
-  
+
 when defined(cpu64):
   proc GetWindowLongPtrA(wnd: HWND, nIndex: int32): LONG_PTR{.stdcall,
       dynlib: "user32", importc: "GetWindowLongPtrA".}
@@ -1021,7 +1021,7 @@ when defined(cpu64):
       dynlib: "user32", importc: "GetClassLongPtrA".}
   proc SetClassLongPtrA(wnd: HWND, nIndex: int32, dwNewLong: LONG_PTR): LONG_PTR{.
       stdcall, dynlib: "user32", importc: "SetClassLongPtrA".}
-  
+
   proc GetWindowLongPtrW(wnd: HWND, nIndex: int32): LONG_PTR{.stdcall,
       dynlib: "user32", importc: "GetWindowLongPtrW".}
   proc SetWindowLongPtrW(wnd: HWND, nIndex: int32, dwNewLong: LONG_PTR): LONG_PTR{.
@@ -1039,7 +1039,7 @@ else:
       dynlib: "user32", importc: "GetClassLongA".}
   proc SetClassLongPtrA(wnd: HWND, nIndex: int32, dwNewLong: LONG_PTR): LONG_PTR{.
       stdcall, dynlib: "user32", importc: "SetClassLongA".}
-      
+
   proc GetWindowLongPtrW(wnd: HWND, nIndex: int32): LONG_PTR{.stdcall,
       dynlib: "user32", importc: "GetWindowLongW".}
   proc SetWindowLongPtrW(wnd: HWND, nIndex: int32, dwNewLong: LONG_PTR): LONG_PTR{.
@@ -1052,45 +1052,45 @@ else:
 template setWindowLongPtr*(wnd: HWND, nIndex: int32, dwNewLong: LONG_PTR): LONG_PTR =
   when defined(winUnicode): SetWindowLongPtrW(wnd, nIndex, dwNewLong)
   else: SetWindowLongPtrA(wnd, nIndex, dwNewLong)
-    
+
 template setClasLongPtr*(wnd: HWND, nIndex: int32, dwNewLong: LONG_PTR): LONG_PTR =
   when defined(winUnicode): SetClassLongPtrW(wnd, nIndex, dwNewLong)
   else: SetClassLongPtrA(wnd, nIndex, dwNewLong)
-    
+
 template getWindowLongPtr*(wnd: HWND, nIndex: int32): LONG_PTR =
   when defined(winUnicode): GetWindowLongPtrW(wnd, nIndex)
   else: GetWindowLongPtrA(wnd, nIndex)
-    
+
 template getClasLongPtr*(wnd: HWND, nIndex: int32): LONG_PTR =
   when defined(winUnicode): GetClassLongPtrW(wnd, nIndex)
   else: GetClassLongPtrA(wnd, nIndex)
-    
+
 proc PostThreadMessageA(idThread: DWORD, Msg: WINUINT, wp: WPARAM,
                          lp: LPARAM): WINBOOL{.stdcall, dynlib: "user32", importc: "PostThreadMessageA".}
 
 proc PostThreadMessageW(idThread: DWORD, Msg: WINUINT, wp: WPARAM,
                          lp: LPARAM): WINBOOL{.stdcall, dynlib: "user32", importc: "PostThreadMessageW".}
-    
+
 template postThreadMessage*(idThread: DWORD, Msg: WINUINT, wp: WPARAM, lp: LPARAM): WINBOOL =
   when defined(winUnicode): PostThreadMessageW(idThread, Msg, wp, lp)
   else: PostThreadMessageA(idThread, Msg, wp, lp)
-  
+
 proc getLastError*(): DWORD{.stdcall, dynlib: "kernel32", importc: "GetLastError".}
 proc getWindowThreadProcessId*(wnd: HWND, lpdwProcessId: LPDWORD): DWORD{.
     stdcall, dynlib: "user32", importc: "GetWindowThreadProcessId".}
-    
+
 proc setTimer*(wnd: HWND, nIDEvent: WINUINT, uElapse: WINUINT, lpTimerFunc: TIMERPROC): WINUINT{.
     stdcall, dynlib: "user32", importc: "SetTimer".}
-    
+
 proc killTimer*(wnd: HWND, uIDEvent: WINUINT): WINBOOL{.stdcall, dynlib: "user32",
     importc: "KillTimer".}
-    
+
 proc messageBoxA*(wnd: HWND, lpText: LPCSTR, lpCaption: LPCSTR, uType: int): int32{.
     stdcall, dynlib: "user32", importc: "MessageBoxA".}
-    
+
 proc messageBoxW*(wnd: HWND, lpText: LPCWSTR, lpCaption: LPCWSTR, uType: int): int32{.
     stdcall, dynlib: "user32", importc: "MessageBoxW".}
-    
+
 template messageBox*(wnd: HWND, lpText, lpCaption: string, uType: int): int32 =
   when defined(winUnicode): messageBoxW(wnd, WC(lpText), WC(lpCaption), uType)
   else: messageBoxA(wnd, WC(lpText), WC(lpCaption), uType)
