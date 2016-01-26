@@ -4,25 +4,25 @@ type
   IDocument* {.pure.} = object of RootObj
     version*: proc(): int {.stdcall.}
     setErrorStatus*: proc(status: int) {.stdcall.}
-    length*: proc(): Sci_Position {.stdcall.}
-    getCharRange*: proc(buffer: cstring; pos, lengthRetrieve: Sci_Position) {.stdcall.}
-    styleAt*: proc(pos: Sci_Position): char {.stdcall.}
-    lineFromPosition*: proc(pos: Sci_Position): Sci_Position {.stdcall.}
-    lineStart*: proc(line: Sci_Position): Sci_Position {.stdcall.}
-    getLevel*: proc(line: Sci_Position): int {.stdcall.}
-    setLevel*: proc(line: Sci_Position, level: int): int {.stdcall.}
-    getLineState*: proc(line: Sci_Position): int {.stdcall.}
-    setLineState*: proc(line: Sci_Position, state: int): int {.stdcall.}
-    startStyling*: proc(pos: Sci_Position, mask: char) {.stdcall.}
-    setStyleFor*: proc(len: Sci_Position, style: char): bool {.stdcall.}
-    setStyles*: proc(len: Sci_Position, styles: cstring): bool {.stdcall.}
+    length*: proc(): int {.stdcall.}
+    getCharRange*: proc(buffer: cstring; pos, lengthRetrieve: int) {.stdcall.}
+    styleAt*: proc(pos: int): char {.stdcall.}
+    lineFromPosition*: proc(pos: int): int {.stdcall.}
+    lineStart*: proc(line: int): int {.stdcall.}
+    getLevel*: proc(line: int): int {.stdcall.}
+    setLevel*: proc(line: int, level: int): int {.stdcall.}
+    getLineState*: proc(line: int): int {.stdcall.}
+    setLineState*: proc(line: int, state: int): int {.stdcall.}
+    startStyling*: proc(pos: int, mask: char) {.stdcall.}
+    setStyleFor*: proc(len: int, style: char): bool {.stdcall.}
+    setStyles*: proc(len: int, styles: cstring): bool {.stdcall.}
     decorationSetCurrentIndicator*: proc(indicator: int) {.stdcall.}
-    decorationFillRange*: proc(pos: Sci_Position, value: int, fillLen: Sci_Position) {.stdcall.}
-    changeLexerState*: proc(start, stop: Sci_Position) {.stdcall.}
+    decorationFillRange*: proc(pos: int, value: int, fillLen: int) {.stdcall.}
+    changeLexerState*: proc(start, stop: int) {.stdcall.}
     codePage*: proc(): int {.stdcall.}
     isDBCSLeadByte*: proc(ch: char): bool {.stdcall.}
     bufferPointer*: proc(): cstring {.stdcall.}
-    getLineIndentation*: proc(line: Sci_Position): int {.stdcall.}
+    getLineIndentation*: proc(line: int): int {.stdcall.}
 
   ILexer* {.pure.} = object of RootObj
     version*: proc(): int {.stdcall.}
@@ -30,17 +30,17 @@ type
     propNames*: proc(): cstring {.stdcall.}
     propType*: proc(name: cstring): int {.stdcall.}
     descProp*: proc(name: cstring): cstring {.stdcall.}
-    propSet*: proc(key, val: cstring): Sci_Position {.stdcall.}
+    propSet*: proc(key, val: cstring): int {.stdcall.}
     descWordListSets*: proc(): cstring {.stdcall.}
-    wordListSet*: proc(n: int, wl: cstring): Sci_Position {.stdcall.}
-    lex*: proc(startPos, lengthDoc: Sci_PositionU, initStyle: int, pAccess: ptr IDocument) {.stdcall.}
-    fold*: proc(startPos, lengthDoc: Sci_PositionU, initStyle: int, pAccess: ptr IDocument) {.stdcall.}
+    wordListSet*: proc(n: int, wl: cstring): int {.stdcall.}
+    lex*: proc(startPos, lengthDoc: int, initStyle: int, pAccess: ptr IDocument) {.stdcall.}
+    fold*: proc(startPos, lengthDoc: int, initStyle: int, pAccess: ptr IDocument) {.stdcall.}
     privateCall*: proc(operation: int, ud: pointer): pointer {.stdcall.}
 
   IDocumentWithLineEnd* = object of IDocument
-    lineEnd*: proc(line: Sci_Position): Sci_Position {.stdcall.}
-    getRelativePosition*: proc(start, offset: Sci_Position): Sci_Position {.stdcall.}
-    getCharacterAndWidth*: proc(pos: Sci_Position, pWidth: var Sci_Position): int {.stdcall.}
+    lineEnd*: proc(line: int): int {.stdcall.}
+    getRelativePosition*: proc(start, offset: int): int {.stdcall.}
+    getCharacterAndWidth*: proc(pos: int, pWidth: var int): int {.stdcall.}
 
   ILexerWithSubStyles* = object of ILexer
     lineEndTypesSupported*: proc(): int {.stdcall.}

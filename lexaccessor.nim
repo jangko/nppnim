@@ -10,21 +10,21 @@ const
   slopSize = bufferSize div 8
   
 type
-  EncodingType = enum
+  EncodingType* = enum
     enc8bit, encUnicode, encDBCS
     
   LexAccessor* = ref object
     pAccess: ptr IDocument
     buf: array[0..bufferSize, char]
-    startPos: Sci_Position
-    endPos: Sci_Position
+    startPos: int
+    endPos: int
     codePage: int
     encodingType: EncodingType
-    lenDoc: Sci_Position
+    lenDoc: int
     styleBuf: array[0..bufferSize, char]
-    validLen: Sci_Position
-    startSeg: Sci_PositionU
-    startPosStyling: Sci_Position
+    validLen: int
+    startSeg: int
+    startPosStyling: int
     documentVersion: int
 
 proc newLexAccessor*(pAccess: ptr IDocument): LexAccessor =
@@ -50,7 +50,7 @@ proc newLexAccessor*(pAccess: ptr IDocument): LexAccessor =
     result.encodingType = encDBCS
   else: result.encodingType = enc8bit
   
-proc fill*(L: LexAccessor, pos: Sci_Position) =
+proc fill*(L: LexAccessor, pos: int) =
   L.startPos = pos - slopSize
   if (L.startPos + bufferSize) > L.lenDoc:
     L.startPos = L.lenDoc - bufferSize
@@ -58,10 +58,10 @@ proc fill*(L: LexAccessor, pos: Sci_Position) =
   if L.startPos < 0: L.startPos = 0
   L.endPos = L.startPos + bufferSize
   if L.endPos > L.lenDoc: L.endPos = L.lenDoc
-  L.pAccess.getCharRange(L.buf, L.startPos, L.endPos - L.startPos)
+  L.pAccess.getCharRange(L.buf, L.startPos.int, (L.endPos - L.startPos).int)
   L.buf[L.endPos - L.startPos] = chr(0)
   
-proc `[]`*(L: LexAccessor, pos: Sci_Position): char =
+proc `[]`*(L: LexAccessor, pos: int): char =
   if (pos < L.startPos) or (pos >= L.endPos): L.fill(pos)
   result = L.buf[pos - L.startPos]
 
@@ -71,7 +71,7 @@ proc multiByteAccess*(L: LexAccessor): ptr IDocumentWithLineEnd =
   result = nil
 
 # Safe version of operator[], returning a defined value for invalid position.
-proc safeGetCharAt*(L: LexAccessor, pos: Sci_Position, chDefault = ' '): char =
+proc safeGetCharAt*(L: LexAccessor, pos: int, chDefault = ' '): char =
   if (pos < L.startPos) or (pos >= L.endPos): L.fill(pos)
   if (pos < L.startPos) or (pos >= L.endPos):
     # Position is outside range of document
@@ -84,23 +84,23 @@ proc isLeadByte*(L: LexAccessor, ch: char): bool =
 proc encoding*(L: LexAccessor): EncodingType =
   result = L.encodingType
 
-proc match*(L: LexAccessor, pos: Sci_Position, s: cstring): bool =
+proc match*(L: LexAccessor, pos: int, s: cstring): bool =
   var i = 0
   while s[i] != chr(0):
-    if s[i] != L.safeGetCharAt((pos + i).Sci_Position): return false
+    if s[i] != L.safeGetCharAt((pos + i).int): return false
     inc i
   result = true
 
-proc styleAt*(L: LexAccessor, pos: Sci_Position): char =
+proc styleAt*(L: LexAccessor, pos: int): char =
   result = L.pAccess.styleAt(pos)
   
-proc getLine*(L: LexAccessor, pos: Sci_Position): Sci_Position =
+proc getLine*(L: LexAccessor, pos: int): int =
   result = L.pAccess.lineFromPosition(pos)
 
-proc lineStart*(L: LexAccessor, line: Sci_Position): Sci_Position = 
+proc lineStart*(L: LexAccessor, line: int): int = 
   result = L.pAccess.lineStart(line)
 
-proc lineEnd*(L: LexAccessor, line: Sci_Position): Sci_Position =
+proc lineEnd*(L: LexAccessor, line: int): int =
   if L.documentVersion >= dvLineEnd:
     return cast[ptr IDocumentWithLineEnd](L.pAccess).lineEnd(line)
   else:
@@ -112,10 +112,10 @@ proc lineEnd*(L: LexAccessor, line: Sci_Position): Sci_Position =
     else:
       return startNext - 1
       
-proc levelAt*(L: LexAccessor, line: Sci_Position): int =
+proc levelAt*(L: LexAccessor, line: int): int =
   result = L.pAccess.getLevel(line)
 
-proc length*(L: LexAccessor): Sci_Position =
+proc length*(L: LexAccessor): int =
   result = L.lenDoc
 
 proc flush*(L: LexAccessor) =
@@ -124,32 +124,32 @@ proc flush*(L: LexAccessor) =
     inc(L.startPosStyling, L.validLen)
     L.validLen = 0
 
-proc getLineState*(L: LexAccessor, line: Sci_Position): int =
+proc getLineState*(L: LexAccessor, line: int): int =
   result = L.pAccess.getLineState(line)
 
-proc setLineState*(L: LexAccessor, line: Sci_Position, state: int): int =
+proc setLineState*(L: LexAccessor, line: int, state: int): int =
   result = L.pAccess.setLineState(line, state)
 
 #Style setting
-proc startAt*(L: LexAccessor, start: Sci_Position) =
+proc startAt*(L: LexAccessor, start: int) =
   L.pAccess.startStyling(start, '\xFF')
   L.startPosStyling = start
 
-proc getStartSegment*(L: LexAccessor): Sci_PositionU =
+proc getStartSegment*(L: LexAccessor): int =
   result = L.startSeg
 
-proc startSegment*(L: LexAccessor, pos: Sci_PositionU) =
+proc startSegment*(L: LexAccessor, pos: int) =
   L.startSeg = pos
 
-proc colourTo*(L: LexAccessor, pos: Sci_PositionU, chAttr: int) =
+proc colourTo*(L: LexAccessor, pos: int, chAttr: int) =
   # Only perform styling if non empty range
   if pos != L.startSeg - 1:
     assert(pos >= L.startSeg)
     if pos < L.startSeg: return
-    if L.validLen + ((pos - L.startSeg).Sci_Position + 1) >= bufferSize: L.flush()
-    if L.validLen + ((pos - L.startSeg).Sci_Position + 1) >= bufferSize:
+    if L.validLen + ((pos - L.startSeg).int + 1) >= bufferSize: L.flush()
+    if L.validLen + ((pos - L.startSeg).int + 1) >= bufferSize:
       # Too big for buffer so send directly
-      discard L.pAccess.setStyleFor((pos - L.startSeg).Sci_Position + 1, chr(chAttr))
+      discard L.pAccess.setStyleFor((pos - L.startSeg).int + 1, chr(chAttr))
     else:
       for i in L.startSeg..pos:
         assert((L.startPosStyling + L.validLen) < L.length())
@@ -157,12 +157,12 @@ proc colourTo*(L: LexAccessor, pos: Sci_PositionU, chAttr: int) =
         inc L.validLen
   L.startSeg = pos + 1
 
-proc setLevel*(L: LexAccessor, line: Sci_Position, level: int) =
+proc setLevel*(L: LexAccessor, line: int, level: int) =
   discard L.pAccess.setLevel(line, level)
 
-proc indicatorFill*(L: LexAccessor, start, stop: Sci_Position, indicator, value: int) =
+proc indicatorFill*(L: LexAccessor, start, stop: int, indicator, value: int) =
   L.pAccess.decorationSetCurrentIndicator(indicator)
   L.pAccess.decorationFillRange(start, value, stop - start)
 
-proc changeLexerState*(L: LexAccessor, start, stop: Sci_Position) =
+proc changeLexerState*(L: LexAccessor, start, stop: int) =
   L.pAccess.changeLexerState(start, stop)

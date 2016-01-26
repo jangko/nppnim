@@ -4,200 +4,208 @@ type
   StyleContext = ref object
     styler: LexAccessor
     multiByteAccess: ptr IDocumentWithLineEnd
-    endPos: Sci_PositionU
-    lengthDocument: Sci_PositionU
+    endPos: int
+    lengthDocument: int
     
     #Used for optimizing GetRelativeCharacter
-    posRelative: Sci_PositionU
-    currentPosLastRelative: Sci_PositionU
-    offsetRelative: Sci_Position
+    posRelative: int
+    currentPosLastRelative: int
+    offsetRelative: int
     
-      Sci_PositionU currentPos;
-  Sci_Position currentLine;
-  Sci_Position lineDocEnd;
-  Sci_Position lineStartNext;
-  bool atLineStart;
-  bool atLineEnd;
-  int state;
-  int chPrev;
-  int ch;
-  Sci_Position width;
-  int chNext;
-  Sci_Position widthNext;
+    currentPos: int
+    currentLine: int
+    lineDocEnd: int
+    lineStartNext: int
+    atLineStart: bool
+    atLineEnd: bool
+    state: int
+    chPrev: int
+    ch: int
+    width: int
+    chNext: int
+    widthNext: int
   
 proc makeLowerCase(ch: int): int =
   if (ch < 'A'.ord) or (ch > 'Z'.ord): return ch
   else: result = ch - 'A'.ord + 'a'.ord
 
-  void GetNextChar() {
-    if (multiByteAccess) {
-      chNext = multiByteAccess->GetCharacterAndWidth(currentPos+width, &widthNext);
-    } else {
-      chNext = static_cast<unsigned char>(styler.SafeGetCharAt(currentPos+width, 0));
-      widthNext = 1;
-    }
-    // End of line determined from line end position, allowing CR, LF,
-    // CRLF and Unicode line ends as set by document.
-    if (currentLine < lineDocEnd)
-      atLineEnd = static_cast<Sci_Position>(currentPos) >= (lineStartNext-1);
-    else // Last line
-      atLineEnd = static_cast<Sci_Position>(currentPos) >= lineStartNext;
-  }
+proc getNextChar*(ctx: StyleContext) =
+  if ctx.multiByteAccess != nil:
+    ctx.chNext = ctx.multiByteAccess.getCharacterAndWidth(ctx.currentPos + ctx.width, ctx.widthNext)
+  else:
+    ctx.chNext = ctx.styler.safeGetCharAt(ctx.currentPos + ctx.width, chr(0)).ord
+    ctx.widthNext = 1
+    
+  #End of line determined from line end position, allowing CR, LF,
+  #CRLF and Unicode line ends as set by document.
+  if ctx.currentLine < ctx.lineDocEnd:
+    ctx.atLineEnd = ctx.currentPos >= (ctx.lineStartNext-1)
+  else: #Last line
+    ctx.atLineEnd = ctx.currentPos >= ctx.lineStartNext
   
-  StyleContext(Sci_PositionU startPos, Sci_PositionU length,
-                        int initStyle, LexAccessor &styler_, char chMask='\377') :
-    styler(styler_),
-    multiByteAccess(0),
-    endPos(startPos + length),
-    posRelative(0),
-    currentPosLastRelative(0x7FFFFFFF),
-    offsetRelative(0),
-    currentPos(startPos),
-    currentLine(-1),
-    lineStartNext(-1),
-    atLineEnd(false),
-    state(initStyle & chMask), // Mask off all bits which aren't in the chMask.
-    chPrev(0),
-    ch(0),
-    width(0),
-    chNext(0),
-    widthNext(1) {
-    if (styler.Encoding() != enc8bit) {
-      multiByteAccess = styler.MultiByteAccess();
-    }
-    styler.StartAt(startPos /*, chMask*/);
-    styler.StartSegment(startPos);
-    currentLine = styler.GetLine(startPos);
-    lineStartNext = styler.LineStart(currentLine+1);
-    lengthDocument = static_cast<Sci_PositionU>(styler.Length());
-    if (endPos == lengthDocument)
-      endPos++;
-    lineDocEnd = styler.GetLine(lengthDocument);
-    atLineStart = static_cast<Sci_PositionU>(styler.LineStart(currentLine)) == startPos;
+proc newStyleContext*(startPos, length, initStyle: int, styler: LexAccessor, chMask = '\xFF'): StyleContext =
+  result.styler = styler
+  result.multiByteAccess = nil
+  result.endPos = startPos + length
+  result.posRelative = 0
+  result.currentPosLastRelative = 0x7FFFFFFF
+  result.offsetRelative = 0
+  result.currentPos = startPos
+  result.currentLine = -1
+  result.lineStartNext = -1
+  result.atLineEnd = false 
+  result.state = initStyle and chMask.ord # Mask off all bits which aren't in the chMask.
+  result.chPrev = 0
+  result.ch = 0
+  result.width = 0
+  result.chNext = 0 
+  result.widthNext = 1
+  if styler.encoding() != enc8bit:
+    result.multiByteAccess = styler.multiByteAccess()
 
-    // Variable width is now 0 so GetNextChar gets the char at currentPos into chNext/widthNext
-    width = 0;
-    GetNextChar();
-    ch = chNext;
-    width = widthNext;
+  styler.startAt(startPos)
+  styler.startSegment(startPos)
+  result.currentLine = styler.getLine(startPos)
+  result.lineStartNext = styler.lineStart(result.currentLine + 1)
+  result.lengthDocument = styler.length()
+  if result.endPos == result.lengthDocument:
+    inc result.endPos
+  result.lineDocEnd = styler.getLine(result.lengthDocument)
+  result.atLineStart = styler.lineStart(result.currentLine) == startPos
+  
+  # Variable width is now 0 so GetNextChar gets the char at currentPos into chNext/widthNext
+  result.width = 0
+  result.getNextChar()
+  result.ch = result.chNext
+  result.width = result.widthNext
+  result.getNextChar()
 
-    GetNextChar();
-  }
-  void Complete() {
-    styler.ColourTo(currentPos - ((currentPos > lengthDocument) ? 2 : 1), state);
-    styler.Flush();
-  }
-  bool More() const {
-    return currentPos < endPos;
-  }
-  void Forward() {
-    if (currentPos < endPos) {
-      atLineStart = atLineEnd;
-      if (atLineStart) {
-        currentLine++;
-        lineStartNext = styler.LineStart(currentLine+1);
-      }
-      chPrev = ch;
-      currentPos += width;
-      ch = chNext;
-      width = widthNext;
-      GetNextChar();
-    } else {
-      atLineStart = false;
-      chPrev = ' ';
-      ch = ' ';
-      chNext = ' ';
-      atLineEnd = true;
-    }
-  }
-  void Forward(Sci_Position nb) {
-    for (Sci_Position i = 0; i < nb; i++) {
-      Forward();
-    }
-  }
-  void ForwardBytes(Sci_Position nb) {
-    Sci_PositionU forwardPos = currentPos + nb;
-    while (forwardPos > currentPos) {
-      Forward();
-    }
-  }
-  void ChangeState(int state_) {
-    state = state_;
-  }
-  void SetState(int state_) {
-    styler.ColourTo(currentPos - ((currentPos > lengthDocument) ? 2 : 1), state);
-    state = state_;
-  }
-  void ForwardSetState(int state_) {
-    Forward();
-    styler.ColourTo(currentPos - ((currentPos > lengthDocument) ? 2 : 1), state);
-    state = state_;
-  }
-  Sci_Position LengthCurrent() const {
-    return currentPos - styler.GetStartSegment();
-  }
-  int GetRelative(Sci_Position n) {
-    return static_cast<unsigned char>(styler.SafeGetCharAt(currentPos+n, 0));
-  }
-  int GetRelativeCharacter(Sci_Position n) {
-    if (n == 0)
-      return ch;
-    if (multiByteAccess) {
-      if ((currentPosLastRelative != currentPos) ||
-        ((n > 0) && ((offsetRelative < 0) || (n < offsetRelative))) ||
-        ((n < 0) && ((offsetRelative > 0) || (n > offsetRelative)))) {
-        posRelative = currentPos;
-        offsetRelative = 0;
-      }
-      Sci_Position diffRelative = n - offsetRelative;
-      Sci_Position posNew = multiByteAccess->GetRelativePosition(posRelative, diffRelative);
-      int chReturn = multiByteAccess->GetCharacterAndWidth(posNew, 0);
-      posRelative = posNew;
-      currentPosLastRelative = currentPos;
-      offsetRelative = n;
-      return chReturn;
-    } else {
-      // fast version for single byte encodings
-      return static_cast<unsigned char>(styler.SafeGetCharAt(currentPos + n, 0));
-    }
-  }
-  bool Match(char ch0) const {
-    return ch == static_cast<unsigned char>(ch0);
-  }
-  bool Match(char ch0, char ch1) const {
-    return (ch == static_cast<unsigned char>(ch0)) && (chNext == static_cast<unsigned char>(ch1));
-  }
-  bool Match(const char *s) {
-    if (ch != static_cast<unsigned char>(*s))
-      return false;
-    s++;
-    if (!*s)
-      return true;
-    if (chNext != static_cast<unsigned char>(*s))
-      return false;
-    s++;
-    for (int n=2; *s; n++) {
-      if (*s != styler.SafeGetCharAt(currentPos+n, 0))
-        return false;
-      s++;
-    }
-    return true;
-  }
-  bool MatchIgnoreCase(const char *s) {
-    if (MakeLowerCase(ch) != static_cast<unsigned char>(*s))
-      return false;
-    s++;
-    if (MakeLowerCase(chNext) != static_cast<unsigned char>(*s))
-      return false;
-    s++;
-    for (int n=2; *s; n++) {
-      if (static_cast<unsigned char>(*s) !=
-        MakeLowerCase(static_cast<unsigned char>(styler.SafeGetCharAt(currentPos+n, 0))))
-        return false;
-      s++;
-    }
-    return true;
-  }
-  // Non-inline
-  void GetCurrent(char *s, Sci_PositionU len);
-  void GetCurrentLowered(char *s, Sci_PositionU len);
+proc complete*(ctx: StyleContext) =
+  let x = if ctx.currentPos > ctx.lengthDocument: 2 else: 1
+  ctx.styler.colourTo(ctx.currentPos - x, ctx.state)
+  ctx.styler.flush()
+
+proc more*(ctx: StyleContext): bool =
+  result = ctx.currentPos < ctx.endPos
+
+proc forward*(ctx: StyleContext) =
+  if ctx.currentPos < ctx.endPos:
+    ctx.atLineStart = ctx.atLineEnd
+    if ctx.atLineStart:
+      inc ctx.currentLine
+      ctx.lineStartNext = ctx.styler.lineStart(ctx.currentLine + 1)
+    ctx.chPrev = ctx.ch
+    inc(ctx.currentPos, ctx.width)
+    ctx.ch = ctx.chNext
+    ctx.width = ctx.widthNext
+    ctx.getNextChar()
+  else:
+    ctx.atLineStart = false
+    ctx.chPrev = ' '.ord
+    ctx.ch = ' '.ord
+    ctx.chNext = ' '.ord
+    ctx.atLineEnd = true
+
+proc forward*(ctx: StyleContext, nb: int) =
+  for i in 0..nb-1: ctx.forward()
+
+proc forwardBytes*(ctx: StyleContext, nb: int) =
+  let forwardPos = ctx.currentPos + nb
+  while forwardPos > ctx.currentPos:
+    ctx.forward()
+
+proc changeState*(ctx: StyleContext, state: int) =
+  ctx.state = state
+
+proc setState*(ctx: StyleContext, state: int) =
+  let x = if ctx.currentPos > ctx.lengthDocument: 2 else: 1
+  ctx.styler.colourTo(ctx.currentPos - x, ctx.state)
+  ctx.state = state
+
+proc forwardSetState*(ctx: StyleContext, state: int) =
+  ctx.forward()
+  let x = if ctx.currentPos > ctx.lengthDocument: 2 else: 1
+  ctx.styler.colourTo(ctx.currentPos - x, ctx.state)
+  ctx.state = state
+
+proc lengthCurrent*(ctx: StyleContext): int =
+  result = ctx.currentPos - ctx.styler.getStartSegment()
+
+proc getRelative*(ctx: StyleContext, n: int): int = 
+  result = ctx.styler.safeGetCharAt(ctx.currentPos + n, chr(0)).ord
+
+proc getRelativeCharacter*(ctx: StyleContext, n: int): int =
+  if n == 0: return ctx.ch
+  if ctx.multiByteAccess != nil:
+    if (ctx.currentPosLastRelative != ctx.currentPos) or
+      ((n > 0) and ((ctx.offsetRelative < 0) or (n < ctx.offsetRelative))) or
+      ((n < 0) and ((ctx.offsetRelative > 0) or (n > ctx.offsetRelative))):
+        ctx.posRelative = ctx.currentPos
+        ctx.offsetRelative = 0
+    
+    var w = 0
+    let 
+      diffRelative = n - ctx.offsetRelative
+      posNew = ctx.multiByteAccess.getRelativePosition(ctx.posRelative, diffRelative)
+      chReturn = ctx.multiByteAccess.getCharacterAndWidth(posNew, w)
+      
+    ctx.posRelative = posNew
+    ctx.currentPosLastRelative = ctx.currentPos
+    ctx.offsetRelative = n
+    return chReturn
+  else:
+    #fast version for single byte encodings
+    result = ctx.styler.safeGetCharAt(ctx.currentPos + n, chr(0)).ord
+
+proc match*(ctx: StyleContext, ch0: char): bool =
+  result = ctx.ch == ch0.ord
+
+proc match*(ctx: StyleContext, ch0, ch1: char): bool =
+  result = (ctx.ch == ch0.ord) and (ctx.chNext == ch1.ord)
+
+proc match*(ctx: StyleContext, s: cstring): bool =
+  var i = 0
+  if ctx.ch != s[i].ord: return false
+  inc i
+  if s[i] == chr(0): return true
+  if ctx.chNext != s[i].ord: return false
+  inc i
+  
+  while s[i].ord != 0:
+    if s[i].ord != ctx.styler.safeGetCharAt(ctx.currentPos + i, chr(0)).ord: 
+      return false
+    inc i
+  result = true
+
+proc matchIgnoreCase*(ctx: StyleContext, s: cstring): bool =
+  var i = 0
+  if makeLowerCase(ctx.ch) != s[i].ord: return false
+  inc i
+  if makeLowerCase(ctx.chNext) != s[i].ord: return false
+  inc i
+  
+  while s[i].ord != 0:
+    if s[i].ord != makeLowerCase(ctx.styler.safeGetCharAt(ctx.currentPos + i, chr(0)).ord): 
+      return false
+    inc i
+  result = true
+
+proc getRange(start, stop: int, styler: LexAccessor, s: var cstring, len: int) =
+  var i = 0
+  while(i < stop - start + 1) and (i < len-1):
+    s[i] = styler[start + i]
+    inc i
+  s[i] = chr(0)
+
+proc getCurrent*(ctx: StyleContext, s: var cstring, len: int) = 
+  getRange(ctx.styler.getStartSegment(), ctx.currentPos - 1, ctx.styler, s, len)
+
+proc getRangeLowered(start, stop: int, styler: LexAccessor, s: var cstring, len: int) =
+  var i = 0
+  while (i < stop - start + 1) and (i < len-1):
+    s[i] = makeLowerCase(styler[start + i].ord).chr
+    inc i
+  s[i] = chr(0)
+
+proc getCurrentLowered*(ctx: StyleContext, s: var cstring, len: int) = 
+  getRangeLowered(ctx.styler.getStartSegment(), ctx.currentPos - 1, ctx.styler, s, len)
