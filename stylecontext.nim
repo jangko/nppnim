@@ -1,7 +1,7 @@
 import lexaccessor, lexer, scintilla
 
 type
-  StyleContext = object
+  StyleContext* = object
     styler: ptr LexAccessor
     endPos: int
     lengthDocument: int
@@ -18,18 +18,18 @@ type
     atLineStart: bool
     atLineEnd: bool
     state*: int
-    chPrev: int
-    ch: int
+    chPrev*: char
+    ch*: char
     width: int
-    chNext: int
+    chNext*: char
     widthNext: int
   
-proc makeLowerCase(ch: int): int =
-  if (ch < 'A'.ord) or (ch > 'Z'.ord): return ch
-  else: result = ch - 'A'.ord + 'a'.ord
+proc makeLowerCase(ch: char): char =
+  if (ch < 'A') or (ch > 'Z'): return ch
+  else: result = (ch.ord - 'A'.ord + 'a'.ord).chr
 
 proc getNextChar*(ctx: var StyleContext) =
-  ctx.chNext = safeGetCharAt(ctx.styler[], ctx.currentPos + ctx.width, chr(0)).ord
+  ctx.chNext = safeGetCharAt(ctx.styler[], ctx.currentPos + ctx.width, chr(0))
   ctx.widthNext = 1
     
   #End of line determined from line end position, allowing CR, LF,
@@ -50,10 +50,10 @@ proc initStyleContext*(startPos, length, initStyle: int, styler: ptr LexAccessor
   result.lineStartNext = -1
   result.atLineEnd = false 
   result.state = initStyle and chMask.ord # Mask off all bits which aren't in the chMask.
-  result.chPrev = 0
-  result.ch = 0
+  result.chPrev = 0.chr
+  result.ch = 0.chr
   result.width = 0
-  result.chNext = 0 
+  result.chNext = 0.chr 
   result.widthNext = 1
   styler[].startAt(startPos)
   styler[].startSegment(startPos)
@@ -93,9 +93,9 @@ proc forward*(ctx: var StyleContext) =
     ctx.getNextChar()
   else:
     ctx.atLineStart = false
-    ctx.chPrev = ' '.ord
-    ctx.ch = ' '.ord
-    ctx.chNext = ' '.ord
+    ctx.chPrev = ' '
+    ctx.ch = ' '
+    ctx.chNext = ' '
     ctx.atLineEnd = true
 
 proc forward*(ctx: var StyleContext, nb: int) =
@@ -123,43 +123,43 @@ proc forwardSetState*(ctx: var StyleContext, state: int) =
 proc lengthCurrent*(ctx: StyleContext): int =
   result = ctx.currentPos - ctx.styler[].getStartSegment()
 
-proc getRelative*(ctx: StyleContext, n: int): int = 
-  result = ctx.styler[].safeGetCharAt(ctx.currentPos + n, chr(0)).ord
+proc getRelative*(ctx: StyleContext, n: int): char = 
+  result = ctx.styler[].safeGetCharAt(ctx.currentPos + n, chr(0))
 
-proc getRelativeCharacter*(ctx: StyleContext, n: int): int =
+proc getRelativeCharacter*(ctx: StyleContext, n: int): char =
   if n == 0: return ctx.ch
   #fast version for single byte encodings
-  result = ctx.styler[].safeGetCharAt(ctx.currentPos + n, chr(0)).ord
+  result = ctx.styler[].safeGetCharAt(ctx.currentPos + n, chr(0))
 
 proc match*(ctx: StyleContext, ch0: char): bool =
-  result = ctx.ch == ch0.ord
+  result = ctx.ch == ch0
 
 proc match*(ctx: StyleContext, ch0, ch1: char): bool =
-  result = (ctx.ch == ch0.ord) and (ctx.chNext == ch1.ord)
+  result = (ctx.ch == ch0) and (ctx.chNext == ch1)
 
 proc match*(ctx: StyleContext, s: cstring): bool =
   var i = 0
-  if ctx.ch != s[i].ord: return false
+  if ctx.ch != s[i]: return false
   inc i
   if s[i] == chr(0): return true
-  if ctx.chNext != s[i].ord: return false
+  if ctx.chNext != s[i]: return false
   inc i
   
   while s[i].ord != 0:
-    if s[i].ord != ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0)).ord: 
+    if s[i] != ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0)): 
       return false
     inc i
   result = true
 
 proc matchIgnoreCase*(ctx: StyleContext, s: cstring): bool =
   var i = 0
-  if makeLowerCase(ctx.ch) != s[i].ord: return false
+  if makeLowerCase(ctx.ch) != s[i]: return false
   inc i
-  if makeLowerCase(ctx.chNext) != s[i].ord: return false
+  if makeLowerCase(ctx.chNext) != s[i]: return false
   inc i
   
   while s[i].ord != 0:
-    if s[i].ord != makeLowerCase(ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0)).ord): 
+    if s[i] != makeLowerCase(ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0))): 
       return false
     inc i
   result = true
@@ -177,7 +177,7 @@ proc getCurrent*(ctx: StyleContext, s: var cstring, len: int) =
 proc getRangeLowered(start, stop: int, styler: var LexAccessor, s: var cstring, len: int) =
   var i = 0
   while (i < stop - start + 1) and (i < len-1):
-    s[i] = makeLowerCase(styler[start + i].ord).chr
+    s[i] = makeLowerCase(styler[start + i])
     inc i
   s[i] = chr(0)
 

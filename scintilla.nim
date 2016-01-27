@@ -1181,12 +1181,12 @@ proc getTextRange*(sci: SciHandle; fr, to: int): string =
   tr.lpstrText =  result.cstring
   sci.scisend(SCI_GETTEXTRANGE, 0, cast[sptr_t](tr.addr))
 
-proc getCharRange*(sci: SciHandle, buf: cstring, start, stop: int) =
+proc getCharRange*(sci: SciHandle, buf: cstring, start, stop: int): int =
   var tr: TextRange
   tr.chrg.cpMin = start.Sci_PositionCR
   tr.chrg.cpMax = stop.Sci_PositionCR
   tr.lpstrText =  buf
-  sci.scisend(SCI_GETTEXTRANGE, 0, cast[sptr_t](tr.addr))
+  result = sci.scisend(SCI_GETTEXTRANGE, 0, cast[sptr_t](tr.addr))
   
 proc allocate*(sci: SciHandle; bytes: int) =
   sci.scisend(SCI_ALLOCATE, bytes)
@@ -1584,8 +1584,8 @@ proc getEndAtLastLine*(sci: SciHandle): bool =
 proc getEndStyled*(sci: SciHandle): int =
   result = sci.scisend(SCI_GETENDSTYLED)
 
-proc startStyling*(sci: SciHandle; pos, mask: int) =
-  sci.scisend(SCI_STARTSTYLING, pos, mask.sptr_t)
+proc startStyling*(sci: SciHandle; pos: int) =
+  sci.scisend(SCI_STARTSTYLING, pos)
 
 proc setStyling*(sci: SciHandle; length, style: int) =
   sci.scisend(SCI_SETSTYLING, length, style.sptr_t)

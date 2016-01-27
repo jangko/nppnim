@@ -1,4 +1,4 @@
-import scintilla
+import scintilla, support
 
 const
   extremePosition = 0x7FFFFFFF
@@ -14,7 +14,7 @@ type
     enc8bit, encUnicode, encDBCS
     
   LexAccessor* = object
-    pAccess: SciHandle
+    pAccess: IDocument
     buf: array[0..bufferSize, char]
     startPos: int
     endPos: int
@@ -25,18 +25,20 @@ type
     validLen: int
     startSeg: int
     startPosStyling: int
+    documentVersion: int
     
-proc initLexAccessor*(pAccess: SciHandle): LexAccessor =
+proc initLexAccessor*(pAccess: IDocument): LexAccessor =
   result.pAccess = pAccess
   result.startPos = extremePosition
   result.endPos = 0
-  result.codePage = pAccess.getCodePage()
+  result.codePage = pAccess.nvCodePage()
   result.encodingType = enc8bit
-  result.lenDoc = pAccess.getLength()
+  result.lenDoc = pAccess.nvLength()
   result.validLen = 0
   result.startSeg = 0
   result.startPosStyling = 0
- 
+  result.documentVersion = pAccess.nvVersion()
+  
   #Prevent warnings by static analyzers about uninitialized buf and styleBuf.
   result.buf[0] = chr(0)
   result.styleBuf[0] = chr(0)
@@ -55,7 +57,7 @@ proc fill*(L: var LexAccessor, pos: int) =
   if L.startPos < 0: L.startPos = 0
   L.endPos = L.startPos + bufferSize
   if L.endPos > L.lenDoc: L.endPos = L.lenDoc
-  L.pAccess.getCharRange(L.buf, L.startPos.int, (L.endPos - L.startPos).int)
+  L.pAccess.nvGetCharRange(L.buf, L.startPos, L.endPos - L.startPos)
   L.buf[L.endPos - L.startPos] = chr(0)
   
 proc `[]`*(L: var LexAccessor, pos: int): char =
@@ -81,38 +83,47 @@ proc match*(L: var LexAccessor, pos: int, s: cstring): bool =
   result = true
 
 proc styleAt*(L: LexAccessor, pos: int): int =
-  result = L.pAccess.getStyleAt(pos)
+  result = L.pAccess.nvStyleAt(pos).ord
   
 proc getLine*(L: LexAccessor, pos: int): int =
-  result = L.pAccess.lineFromPosition(pos)
+  result = L.pAccess.nvLineFromPosition(pos)
 
 proc lineStart*(L: LexAccessor, line: int): int = 
-  result = L.pAccess.positionFromLine(line)
+  result = L.pAccess.nvLineStart(line)
 
-proc lineEnd*(L: LexAccessor, line: int): int =
-  result = L.pAccess.getLineEndPosition(line)
+proc lineEnd*(L: var LexAccessor, line: int): int =
+  if L.documentVersion >= dvLineEnd:
+    return cast[IDocumentWithLineEnd](L.pAccess).nvLineEnd(line)
+  else:
+    #Old interface means only '\r', '\n' and '\r\n' line ends.
+    let startNext = L.pAccess.nvLineStart(line + 1)
+    let chLineEnd = L.safeGetCharAt(startNext - 1)
+    if (chLineEnd == '\x0A') and (L.safeGetCharAt(startNext - 2) == '\r'):
+      return startNext - 2
+    else:
+      return startNext - 1
       
 proc levelAt*(L: LexAccessor, line: int): int =
-  result = L.pAccess.getFoldLevel(line)
+  result = L.pAccess.nvGetLevel(line)
 
 proc length*(L: LexAccessor): int =
   result = L.lenDoc
 
 proc flush*(L: var LexAccessor) =
   if L.validLen > 0:
-    L.pAccess.setStylingEx(L.validLen, L.styleBuf)
+    discard L.pAccess.nvSetStyles(L.validLen, L.styleBuf)
     inc(L.startPosStyling, L.validLen)
     L.validLen = 0
 
 proc getLineState*(L: LexAccessor, line: int): int =
-  result = L.pAccess.getLineState(line)
+  result = L.pAccess.nvGetLineState(line)
 
 proc setLineState*(L: LexAccessor, line: int, state: int) =
-  L.pAccess.setLineState(line, state)
+  discard L.pAccess.nvSetLineState(line, state)
 
 #Style setting
 proc startAt*(L: var LexAccessor, start: int) =
-  L.pAccess.startStyling(start, '\xFF'.ord)
+  L.pAccess.nvStartStyling(start, '\xFF')
   L.startPosStyling = start
 
 proc getStartSegment*(L: LexAccessor): int =
@@ -129,7 +140,7 @@ proc colourTo*(L: var LexAccessor, pos: int, chAttr: int) =
     if L.validLen + ((pos - L.startSeg).int + 1) >= bufferSize: L.flush()
     if L.validLen + ((pos - L.startSeg).int + 1) >= bufferSize:
       # Too big for buffer so send directly
-      L.pAccess.setStyling((pos - L.startSeg).int + 1, chAttr)
+      discard L.pAccess.nvSetStyleFor((pos - L.startSeg).int + 1, chAttr.chr)
     else:
       for i in L.startSeg..pos:
         assert((L.startPosStyling + L.validLen) < L.length())
@@ -138,7 +149,11 @@ proc colourTo*(L: var LexAccessor, pos: int, chAttr: int) =
   L.startSeg = pos + 1
 
 proc setLevel*(L: LexAccessor, line, level: int) =
-  L.pAccess.setFoldLevel(line, level)
+  discard L.pAccess.nvSetLevel(line, level)
 
 proc changeLexerState*(L: LexAccessor, start, stop: int) =
-  L.pAccess.scisend(SCI_CHANGELEXERSTATE, start, stop.sptr_t)
+  L.pAccess.nvChangeLexerState(start, stop)
+
+proc indicatorFill*(L: LexAccessor, start, stop, indicator, value: int) =
+  L.pAccess.nvDecorationSetCurrentIndicator(indicator)
+  L.pAccess.nvDecorationFillRange(start, value, stop - start)

@@ -1,5 +1,5 @@
-import winapi, scintilla, nppmsg, menucmdid, lexer, lexaccessor, stylecontext
-
+import winapi, scintilla, nppmsg, menucmdid, support, strutils, lexaccessor, stylecontext
+  
 const
   nbChar = 64
 
@@ -146,14 +146,14 @@ const
   # Style constants 0..31 max. Correspond to npp.xml settings.
   NIM_DEFAULT = 0
   NIM_KEYWORD = 1
-  NIM_FLOW_BREAKER = 2
+  NIM_LINE_COMMENT = 2
   NIM_UNSAFE  = 3
   NIM_NUMBER  = 4
   NIM_STRING  = 5
-  NIM_COMMENT = 6
+  NIM_BLOCK_COMMENT  = 6
   NIM_PRAGMA  = 7
-  NIM_ERROR   = 8
-
+  NIM_OPERATOR = 8
+  
 proc Version(x: pointer): int {.stdcall.} = lvOriginal
 proc Release(x: pointer) {.stdcall.} = discard
 proc PropertyNames(x: pointer): cstring {.stdcall.} = nil
@@ -163,31 +163,29 @@ proc PropertySet(x: pointer, key, val: cstring): int {.stdcall.} = -1
 proc DescribeWordListSets(x: pointer): cstring {.stdcall.} = nil
 proc WordListSet(x: pointer, n: int, wl: cstring): int {.stdcall.} = -1
 
-var disp = 0
-
-proc Lex(x: pointer, startPos, lengthDoc: int, initStyle: int, pAccess: pointer) {.stdcall.} =
-  var lexa = initLexAccessor(getSciHandle())
-  var ctx = initStyleContext(startPos, lengthDoc, initStyle, lexa.addr)
-  
-  while ctx.more():
-    case ctx.state
+proc Lex(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) {.stdcall.} =
+  var
+    styler = initLexAccessor(pAccess)
+    sc = initStyleContext(startPos, docLen, initStyle, styler.addr)
+    
+  while sc.more():
+    case sc.state
     of NIM_DEFAULT:
-      if ctx.match('#', '['):
-        ctx.setState(NIM_COMMENT)
-        ctx.forward() #Move over the #
-  
-    of NIM_COMMENT:
-      if ctx.match(']', '#'):
-        ctx.forward() #Move over the ]
-        ctx.forwardSetState(NIM_DEFAULT)
-  
+      if sc.ch == '#':
+        let state = if sc.chNext == '[': NIM_BLOCK_COMMENT else: NIM_LINE_COMMENT
+        sc.setState(state)
+    of NIM_LINE_COMMENT:
+      if (sc.ch == '\x0D') or (sc.ch == '\x0A'):
+        sc.setState(NIM_DEFAULT)
+    of NIM_BLOCK_COMMENT:
+      if sc.ch == ']' and sc.chNext == '#':
+        sc.setState(NIM_DEFAULT)
     else:
       discard
-  
-    ctx.forward()
-  ctx.complete()
-
-proc Fold(x: pointer, startPos, lengthDoc: int, initStyle: int, pAccess: pointer) {.stdcall.} =
+    sc.forward()
+  sc.complete()
+ 
+proc Fold(x: pointer, startPos, lengthDoc: int, initStyle: int, pAccess: IDocument) {.stdcall.} =
   discard
 
 proc PrivateCall(x: pointer, operation: int, ud: pointer): pointer {.stdcall.} = nil
@@ -242,4 +240,4 @@ proc lexFactory(): ptr ILexer {.stdcall.} =
   result = ilex.addr
 
 proc GetLexerFactory(idx: int): LexerFactoryProc {.stdcall, exportc, dynlib.} =
-  result = lexFactory
+  result = lexFactory  

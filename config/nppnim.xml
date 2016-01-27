@@ -19,13 +19,13 @@
             <!-- keywordClass can be a number between 0 and 8 or the words that are normally used. -->
             <WordsStyle name="Default" styleID="0" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Keyword" styleID="1" fgColor="1B85B8" bgColor="FFFFFF" fontName="" fontStyle="0" />
-            <WordsStyle name="Flow breaker" styleID="2" fgColor="5A5255" bgColor="FFFFFF" fontName="" fontStyle="1" />
+            <WordsStyle name="LineComment" styleID="2" fgColor="5AFF55" bgColor="FFFFFF" fontName="" fontStyle="1" />
             <WordsStyle name="Unsafe" styleID="3" fgColor="FF0000" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Number" styleID="4" fgColor="559E83" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="String" styleID="5" fgColor="AE5A41" bgColor="FFFFFF" fontName="" fontStyle="0" />
-            <WordsStyle name="Comment" styleID="6" fgColor="C3CB710" bgColor="FFFFFF" fontName="" fontStyle="0" />
-            <WordsStyle name="Compiler option" styleID="7" fgColor="008000" bgColor="FFFFFF" fontName="" fontStyle="0" />
-            <WordsStyle name="Error" styleID="8" fgColor="FFFF00" bgColor="FFFFFF" fontName="" fontStyle="4" />
+            <WordsStyle name="BlockComment" styleID="6" fgColor="C3CB710" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="Pragma" styleID="7" fgColor="008000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="Operator" styleID="8" fgColor="FFFF00" bgColor="FFFFFF" fontName="" fontStyle="4" />
         </LexerType>
     </LexerStyles>
 </NotepadPlus>

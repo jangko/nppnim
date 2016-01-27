@@ -53,3 +53,4 @@ template/
 winapi/
 *.exe
 *.dll
+*.o
