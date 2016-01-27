@@ -4,7 +4,7 @@
         <!-- name must be the same as the one in the language menu. -->
         <!-- ext here is the default one. -->
         <!-- Comments are the comment that is used from the context menu when you tell np++ to comment a line. -->
-        <Language name="Nim" ext="nim" commentLine="#" commentStart="#[" commentEnd="]#">
+        <Language name="Nim" ext="nim nims" commentLine="#" commentStart="#[" commentEnd="]#">
           <Keywords name="0">addr and as asm atomic bind block break case cast concept const continue converter defer discard distinct div do elif else end enum except export finally for from func generic if import in include interface is isnot iterator let macro method mixin mod nil not notin object of or out proc ptr raise ref return shl shr static template try tuple type using var when while with without xor yield</Keywords>
         </Language>
     </Languages>
@@ -13,13 +13,13 @@
         <!-- desc is what shows up in the styler configuator. -->
         <!-- ext is the "user defined" one. -->
         <!-- excluded is whether is shows up in the language menu. (Can be changed in the settings by the user the normal way.) -->
-        <LexerType name="Nim" desc="Nim" ext="nim nims" excluded="no">
+        <LexerType name="Nim" desc="Nim Lang" ext="" excluded="no">
             <!-- name is what shows up in the styler config for that style. -->
             <!-- styleID can be 0 through 31. -->
             <!-- keywordClass can be a number between 0 and 8 or the words that are normally used. -->
             <WordsStyle name="Default" styleID="0" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
-            <WordsStyle name="Keyword" styleID="1" fgColor="1B85B8" bgColor="FFFFFF" fontName="" fontStyle="0" />
-            <WordsStyle name="LineComment" styleID="2" fgColor="5A0F55" bgColor="FFFFFF" fontName="" fontStyle="1" />
+            <WordsStyle name="Keyword" styleID="1" fgColor="8000FF" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="LineComment" styleID="2" fgColor="008040" bgColor="FFFFFF" fontName="" fontStyle="1" />
             <WordsStyle name="Type" styleID="3" fgColor="FF0000" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Number" styleID="4" fgColor="559E83" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="String" styleID="5" fgColor="AE5A41" bgColor="FFFFFF" fontName="" fontStyle="0" />
@@ -27,8 +27,9 @@
             <WordsStyle name="Pragma" styleID="7" fgColor="008000" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Operator" styleID="8" fgColor="9999ff" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Char" styleID="9" fgColor="FF00FF" bgColor="FFFFFF" fontName="" fontStyle="0" />
-            <WordsStyle name="Ident" styleID="10" fgColor="b19cd9" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="Ident" styleID="10" fgColor="0000A0" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Magic" styleID="11" fgColor="cc615b" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="Braces" styleID="12" fgColor="FF8080" bgColor="FFFFFF" fontName="" fontStyle="0" />
         </LexerType>
     </LexerStyles>
 </NotepadPlus>

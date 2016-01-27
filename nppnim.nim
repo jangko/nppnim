@@ -158,6 +158,7 @@ const
   NIM_CHAR = 9
   NIM_IDENT = 10
   NIM_MAGIC = 11
+  NIM_BRACES = 12
 
 const
   numChars*: set[char] = {'0'..'9', 'a'..'z', 'A'..'Z'}
@@ -354,27 +355,52 @@ proc Lex(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) 
     of NIM_DEFAULT:
       if sc.ch in SymStartChars - {'r', 'R', 'l'}:
         sc.getSymbol()
+        continue
       elif sc.ch == 'l':
         sc.getSymbol()
+        continue
       elif sc.ch in {'r', 'R'}:
         if sc.chNext == '\"':
           sc.forward()
           sc.getString(true)
+          continue
         else:
           sc.getSymbol()
+          continue
       elif sc.ch == '#':
         let state = if sc.chNext == '[': NIM_BLOCK_COMMENT else: NIM_LINE_COMMENT
         sc.setState(state)
       elif sc.ch == '\'':
         sc.getCharacter()
+        continue
       elif sc.ch in {'0'..'9'}:
         sc.getNumber()
+        continue
       elif sc.ch == '{':
         if sc.chNext == '.': sc.setState(NIM_PRAGMA)
+        else:
+          sc.setState(NIM_BRACES)
+          sc.forward()
+          sc.setState(NIM_DEFAULT)
+          continue
       elif sc.ch == '\"':
         # check for extended raw string literal:
         let rawMode = sc.currentPos > 0 and sc.chPrev in SymChars
         sc.getString(rawMode)
+        continue
+      elif sc.ch in {'{', '[', '(', '}', ']', ')'}:
+        sc.setState(NIM_BRACES)
+        sc.forward()
+        sc.setState(NIM_DEFAULT)
+        continue
+      else:
+        if sc.ch in OpChars:
+          sc.setState(NIM_OPERATOR)
+          sc.forward()
+          while sc.ch in OpChars:
+            sc.forward()
+          sc.setState(NIM_DEFAULT)
+          continue
     of NIM_LINE_COMMENT:
       if (sc.ch == '\x0D') or (sc.ch == '\x0A'):
         sc.setState(NIM_DEFAULT)
