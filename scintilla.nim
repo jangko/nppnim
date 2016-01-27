@@ -1134,7 +1134,7 @@ type
     ch: char
 
 # Text retrieval and modification
-proc scisend(sci: SciHandle; iMessage: int; wParam = 0; lParam: sptr_t = 0): sptr_t {.discardable.} =
+proc scisend*(sci: SciHandle; iMessage: int; wParam = 0; lParam: sptr_t = 0): sptr_t {.discardable.} =
   result = sci.send(sci.hnd, iMessage.cuint, wParam.uptr_t, lParam)
 
 proc getText*(sci: SciHandle; length: int): string =
@@ -1181,6 +1181,13 @@ proc getTextRange*(sci: SciHandle; fr, to: int): string =
   tr.lpstrText =  result.cstring
   sci.scisend(SCI_GETTEXTRANGE, 0, cast[sptr_t](tr.addr))
 
+proc getCharRange*(sci: SciHandle, buf: cstring, start, stop: int) =
+  var tr: TextRange
+  tr.chrg.cpMin = start.Sci_PositionCR
+  tr.chrg.cpMax = stop.Sci_PositionCR
+  tr.lpstrText =  buf
+  sci.scisend(SCI_GETTEXTRANGE, 0, cast[sptr_t](tr.addr))
+  
 proc allocate*(sci: SciHandle; bytes: int) =
   sci.scisend(SCI_ALLOCATE, bytes)
 
@@ -1583,9 +1590,9 @@ proc startStyling*(sci: SciHandle; pos, mask: int) =
 proc setStyling*(sci: SciHandle; length, style: int) =
   sci.scisend(SCI_SETSTYLING, length, style.sptr_t)
 
-proc setStylingEx*(sci: SciHandle; length: int; styles: string) =
-  sci.scisend(SCI_SETSTYLINGEX, length, cast[sptr_t](styles.cstring))
-
+proc setStylingEx*(sci: SciHandle; length: int; styles: cstring) =
+  sci.scisend(SCI_SETSTYLINGEX, length, cast[sptr_t](styles))
+  
 proc setLineState*(sci: SciHandle; line, state: int) =
   sci.scisend(SCI_SETLINESTATE, line, state.sptr_t)
 
@@ -1718,6 +1725,21 @@ proc callTipSetForeHlt*(sci: SciHandle; value: int) =
 proc callTipUseStyle*(sci: SciHandle; tabSize: int) =
   sci.scisend(SCI_CALLTIPUSESTYLE, tabSize)
 
+# code page
+proc setCodePage*(sci: SciHandle, cp: int) =
+  sci.scisend(SCI_SETCODEPAGE, cp)
+  
+proc getCodePage*(sci: SciHandle): int =
+  result = sci.scisend(SCI_GETCODEPAGE)
+
+# fold level  
+
+proc setFoldLevel*(sci: SciHandle, line, level: int) =
+  sci.scisend(SCI_SETFOLDLEVEL, line, level.sptr_t)
+  
+proc getFoldLevel*(sci: SciHandle, line: int): int =
+  result = sci.scisend(SCI_GETFOLDLEVEL, line)
+
 # Direct access
 
 proc getDirectFunction*(hwnd: HWND): SciFnDirect =
@@ -1726,7 +1748,7 @@ proc getDirectFunction*(hwnd: HWND): SciFnDirect =
 proc getDirectPointer*(hwnd: HWND): int =
   result = sendMessage(hwnd, SCI_GETDIRECTPOINTER)
 
-proc initSciHandle*(hWnd: HWND; directMode: bool): SciHandle =
+proc initSciHandle*(hWnd: HWND; directMode: bool = true): SciHandle =
   #[ Use directMode = TRUE if you know that Scintilla component is accessed
      from the same thread it was created in, i.e. if no message synchronization
      is needed. Otherwise you should use the synchronized access (via
