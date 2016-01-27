@@ -1,8 +1,8 @@
-import lexaccessor, lexer, scintilla
+import lexaccessor, scintilla
 
 type
   StyleContext* = object
-    styler: ptr LexAccessor
+    styler*: ptr LexAccessor
     endPos: int
     lengthDocument: int
     
@@ -11,7 +11,7 @@ type
     currentPosLastRelative: int
     offsetRelative: int
     
-    currentPos: int
+    currentPos*: int
     currentLine: int
     lineDocEnd: int
     lineStartNext: int

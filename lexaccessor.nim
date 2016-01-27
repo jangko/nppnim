@@ -65,7 +65,7 @@ proc `[]`*(L: var LexAccessor, pos: int): char =
   result = L.buf[pos - L.startPos]
 
 # Safe version of operator[], returning a defined value for invalid position.
-proc safeGetCharAt*(L: var LexAccessor, pos: int, chDefault = ' '): char =
+proc safeGetCharAt*(L: var LexAccessor, pos: int, chDefault = chr(0)): char =
   if (pos < L.startPos) or (pos >= L.endPos): L.fill(pos)
   if (pos < L.startPos) or (pos >= L.endPos):
     # Position is outside range of document

@@ -9,7 +9,7 @@ const
   lvOriginal* = 0
   lvSubStyles* = 1
 
-  Keywords* = ["addr",
+  NimKeywords* = ["addr",
     "and",
     "as",
     "asm",
@@ -72,6 +72,7 @@ const
     "tuple",
     "type",
     "using",
+    "unsafeAddr",
     "var",
     "when",
     "while",
@@ -80,7 +81,55 @@ const
     "xor",
     "yield"].toSet()
     
+  NimTypes* = [
+    "bool",
+    "int",
+    "uint",
+    "char",
+    "string",
+    "seq",
+    "cstring",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+    "float",
+    "float32",
+    "float64",
+    "pointer",
+    "void",
+    "expr",
+    "stmt",
+    "typedesc",
+    "auto",
+    "any",
+    "typed",
+    "untyped",
+    "range",
+    "array",
+    "openArray",
+    "set",
+    "varargs"
+  ].toSet()
+  
+  NimMagic* = [
+    "defined",
+    "declared",
+    "declaredInScope",
+    "definedInScope",
+    "new",
+    "high",
+    "low"
+  ].toSet()
+  
 type
+  WordType* = enum
+    WT_KEYWORD, WT_TYPE, WT_IDENT, WT_MAGIC
+    
   IDocument* = distinct pointer
   IDocumentWithLineEnd* = distinct pointer
   
