@@ -1,3 +1,9 @@
+# Copyright (c) 2016 Andri Lim
+#
+# Distributed under the MIT license
+# (See accompanying file LICENSE.txt)
+#
+#-----------------------------------------
 const
   IDM* = 40000
   IDM_FILE* = (IDM + 1000)

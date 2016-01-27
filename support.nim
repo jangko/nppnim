@@ -1,3 +1,9 @@
+# Copyright (c) 2016 Andri Lim
+#
+# Distributed under the MIT license
+# (See accompanying file LICENSE.txt)
+#
+#-----------------------------------------
 import sets
 
 const

@@ -1,6 +1,14 @@
+# Copyright (c) 2016 Andri Lim
+#
+# Distributed under the MIT license
+# (See accompanying file LICENSE.txt)
+#
+#-----------------------------------------
 import 
   winapi, scintilla, nppmsg, menucmdid, support, strutils, 
   lexaccessor, stylecontext, sets, etcpriv
+
+{.link: "resource/resource.o".}
 
 const
   nbChar = 64
@@ -34,7 +42,7 @@ type
   PFUNCGETFUNCSARRAY* = proc(x: ptr int): ptr FuncItem {.cdecl.}
 
 const
-  nbFunc = 2
+  nbFunc = 1
 
 var
   funcItem: array[nbFunc, FuncItem]
@@ -81,21 +89,21 @@ proc getSciHandle(): SciHandle =
   let curScintilla = if which == 0: nppData.sciMainHandle else: nppData.sciSecondHandle
   result = initSciHandle(curScintilla)
 
-proc hello() {.cdecl.} =
+#proc hello() {.cdecl.} =
   #Open a new document
-  sendMessage(nppData.nppHandle, NPPM_MENUCOMMAND, 0, IDM_FILE_NEW)
-  let sci = getSciHandle()
+  ##sendMessage(nppData.nppHandle, NPPM_MENUCOMMAND, 0, IDM_FILE_NEW)
+  #let sci = getSciHandle()
   # Say hello now:
-  sci.addText("Hello, Notepad++!")
+  #sci.addText("Hello, Notepad++!")
 
 proc helloDlg() {.cdecl.} =
-  discard messageBox(NULL, "Hello, Notepad++!", "Notepad++ Plugin Template", MB_OK)
+  discard messageBox(NULL, "Copyright(c) 2016, Andri Lim\nhttps://github.com/jangko/nppnim", "About", MB_OK)
 
 # Initialization of your plugin commands
 # You should fill your plugins commands here
 proc commandMenuInit() =
-  discard setCommand(0, "Hello Notepad++", hello, nil, false)
-  discard setCommand(1, "Hello (with dialog)", helloDlg, nil, false)
+  discard setCommand(0, "About", helloDlg, nil, false)
+  #discard setCommand(1, "", hello, nil, false)
 
 # Here you can do the clean up (especially for the shortcut)
 proc commandMenuCleanUp() =
