@@ -97,7 +97,7 @@ proc pluginCleanUp() =
   #sci.addText("Hello, Notepad++!")
 
 proc helloDlg() {.cdecl.} =
-  discard messageBox(NULL, "Copyright(c) 2016, Andri Lim\nhttps:#github.com/jangko/nppnim", "About", MB_OK)
+  discard messageBox(NULL, "Copyright(c) 2016, Andri Lim\nhttps://github.com/jangko/nppnim", "About", MB_OK)
 
 # Initialization of your plugin commands
 # You should fill your plugins commands here
