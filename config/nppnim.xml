@@ -30,6 +30,9 @@
             <WordsStyle name="Ident" styleID="10" fgColor="0000A0" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Magic" styleID="11" fgColor="cc615b" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Braces" styleID="12" fgColor="FF8080" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="Star" styleID="13" fgColor="FF0000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="TripleString" styleID="14" fgColor="8B814C" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="RawString" styleID="15" fgColor="8B8878" bgColor="FFFFFF" fontName="" fontStyle="0" />
         </LexerType>
     </LexerStyles>
 </NotepadPlus>

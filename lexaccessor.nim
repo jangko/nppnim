@@ -18,7 +18,12 @@ const
 type
   EncodingType* = enum
     enc8bit, encUnicode, encDBCS
+  
+  WSType* = enum
+    wsSpace, wsTab, wsSpaceTab, wsInconsistent
     
+  WSTypes* = set[WSType]
+  
   LexAccessor* = object
     pAccess: IDocument
     buf: array[0..bufferSize, char]
@@ -163,3 +168,48 @@ proc changeLexerState*(L: LexAccessor, start, stop: int) =
 proc indicatorFill*(L: LexAccessor, start, stop, indicator, value: int) =
   L.pAccess.nvDecorationSetCurrentIndicator(indicator)
   L.pAccess.nvDecorationFillRange(start, value, stop - start)
+
+proc indentAmount*(L: var LexAccessor, line: int, flags: var WSTypes): int =
+  var 
+    stop = L.length()
+    spaceFlags: WSTypes
+    pos = L.lineStart(line)
+    ch = L[pos]
+    indent = 0
+    inPrevPrefix = line > 0
+    posPrev = if inPrevPrefix: L.lineStart(line-1) else: 0
+    
+  # Determines the indentation level of the current line and also checks for consistent
+  # indentation compared to the previous line.
+  # Indentation is judged consistent when the indentation whitespace of each line lines
+  # the same or the indentation of one line is a prefix of the other.
+  
+  while ((ch == ' ') or (ch == '\t')) and (pos < stop):
+    if inPrevPrefix:
+      var chPrev = L[posPrev]
+      inc posPrev
+      if (chPrev == ' ') or (chPrev == '\t'):
+        if chPrev != ch: spaceFlags.incl(wsInconsistent)
+      else:
+        inPrevPrefix = false
+    
+    if ch == ' ':
+      spaceFlags.incl(wsSpace)
+      inc indent
+    else: # Tab
+      spaceFlags.incl(wsTab)
+      if spaceFlags.contains(wsSpace):
+        spaceFlags.incl(wsSpaceTab)
+      indent = (indent div 8 + 1) * 8
+    
+    inc(pos)
+    ch = L[pos]
+  
+  flags = spaceFlags
+  inc(indent, SC_FOLDLEVELBASE)
+  # if completely empty line or the start of a comment...
+  
+  if (L.lineStart(line) == L.length()) or (ch in {' ', '\t', '\x0A', '\r'}):
+    return indent or SC_FOLDLEVELWHITEFLAG
+  else:
+    return indent

@@ -12,3 +12,6 @@ how to compile:
 how to test:
   * put nppnim.dll in NPPINSTDIR\plugins
   * put nppnim.xml in NPPINSTDIR\plugins\config
+
+beware:
+  if there exist more than one npp plugin written in Nim, please use compiler switch "-d:useNimRtl", (I never tested it before, but the doc says like that)

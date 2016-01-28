@@ -4,8 +4,8 @@
 # (See accompanying file LICENSE.txt)
 #
 #-----------------------------------------
-import 
-  winapi, scintilla, nppmsg, menucmdid, support, strutils, 
+import
+  winapi, scintilla, nppmsg, menucmdid, support, strutils,
   lexaccessor, stylecontext, sets, etcpriv
 
 {.link: "resource/resource.o".}
@@ -81,13 +81,13 @@ proc pluginInit(hModule: HMODULE) =
 proc pluginCleanUp() =
   discard
 
-proc getSciHandle(): SciHandle =
-  # Get the current scintilla
-  var which = -1
-  sendMessage(nppData.nppHandle, NPPM_GETCURRENTSCINTILLA, 0, cast[LPARAM](which.addr))
-  if which == -1: return
-  let curScintilla = if which == 0: nppData.sciMainHandle else: nppData.sciSecondHandle
-  result = initSciHandle(curScintilla)
+#proc getSciHandle(): SciHandle =
+#  # Get the current scintilla
+#  var which = -1
+#  sendMessage(nppData.nppHandle, NPPM_GETCURRENTSCINTILLA, 0, cast[LPARAM](which.addr))
+#  if which == -1: return
+#  let curScintilla = if which == 0: nppData.sciMainHandle else: nppData.sciSecondHandle
+#  result = initSciHandle(curScintilla)
 
 #proc hello() {.cdecl.} =
   #Open a new document
@@ -97,7 +97,7 @@ proc getSciHandle(): SciHandle =
   #sci.addText("Hello, Notepad++!")
 
 proc helloDlg() {.cdecl.} =
-  discard messageBox(NULL, "Copyright(c) 2016, Andri Lim\nhttps://github.com/jangko/nppnim", "About", MB_OK)
+  discard messageBox(NULL, "Copyright(c) 2016, Andri Lim\nhttps:#github.com/jangko/nppnim", "About", MB_OK)
 
 # Initialization of your plugin commands
 # You should fill your plugins commands here
@@ -167,6 +167,9 @@ const
   NIM_IDENT = 10
   NIM_MAGIC = 11
   NIM_BRACES = 12
+  NIM_STAR = 13
+  NIM_STRING_TRIPLE = 14
+  NIM_RAW_STRING = 15
 
 const
   numChars*: set[char] = {'0'..'9', 'a'..'z', 'A'..'Z'}
@@ -184,174 +187,7 @@ proc PropertySet(x: pointer, key, val: cstring): int {.stdcall.} = -1
 proc DescribeWordListSets(x: pointer): cstring {.stdcall.} = nil
 proc WordListSet(x: pointer, n: int, wl: cstring): int {.stdcall.} = -1
 
-proc handleHexChar(sc: var StyleContext) =
-  if sc.ch in {'0'..'9', 'a'..'f', 'A'..'F'}: sc.forward()
-
-proc handleDecChars(sc: var StyleContext) =
-  while sc.ch in {'0'..'9'}: sc.forward()
-
-proc getEscapedChar(sc: var StyleContext) =
-  sc.forward() # skip '\'
-  case sc.ch
-  of 'n', 'N', 'r', 'R', 'c', 'C', 'l', 'L', 'f', 'F', 'e', 'E', 'a', 'A':
-    sc.forward()
-  of 'b', 'B', 'v', 'V', 't', 'T', '\'', '\"', '\\':
-    sc.forward()
-  of 'x', 'X':
-    sc.forward()
-    handleHexChar(sc)
-    handleHexChar(sc)
-  of '0'..'9':
-    handleDecChars(sc)
-  else: discard
-
-proc getCharacter(sc: var StyleContext) =
-  sc.setState(NIM_CHAR)
-  sc.forward()
-  var c = sc.ch
-  case c
-  of '\0'..pred(' '), '\'': discard
-  of '\\': getEscapedChar(sc)
-  else: sc.forward()
-  sc.forward() # skip '\''
-  sc.setState(NIM_DEFAULT)
-
-proc getNumber(sc: var StyleContext) =
-  proc matchUnderscoreChars(sc: var StyleContext, chars: set[char]) =
-    while sc.more():
-      if sc.ch in chars: sc.forward()
-      else: break
-      if sc.ch == '_':
-        if sc.chNext notin chars: break
-        sc.forward()
-
-  const baseCodeChars = {'X', 'x', 'o', 'c', 'C', 'b', 'B'}
-
-  # First stage: find out base, make verifications, build token literal string
-  sc.setState(NIM_NUMBER)
-  if sc.ch == '0' and sc.chNext in baseCodeChars + {'O'}:
-    sc.forward()
-    case sc.ch
-    of 'O': discard
-    of 'x', 'X':
-      sc.forward()
-      matchUnderscoreChars(sc, {'0'..'9', 'a'..'f', 'A'..'F'})
-    of 'o', 'c', 'C':
-      sc.forward()
-      matchUnderscoreChars(sc, {'0'..'7'})
-    of 'b', 'B':
-      sc.forward()
-      matchUnderscoreChars(sc,  {'0'..'1'})
-    else:
-      discard
-  else:
-    matchUnderscoreChars(sc, {'0'..'9'})
-    if (sc.ch == '.') and (sc.chNext in {'0'..'9'}):
-      sc.forward()
-      matchUnderscoreChars(sc, {'0'..'9'})
-    if sc.ch in {'e', 'E'}:
-      sc.forward()
-      if sc.ch in {'+', '-'}:
-        sc.forward()
-      matchUnderscoreChars(sc, {'0'..'9'})
-
-  # Second stage, find out if there's a datatype suffix and handle it
-  if sc.ch in {'\'', 'f', 'F', 'd', 'D', 'i', 'I', 'u', 'U'}:
-    if sc.ch == '\'': sc.forward()
-
-    case sc.ch
-    of 'f', 'F':
-      sc.forward()
-      while sc.ch in {'0'..'9'}:
-        sc.forward()
-    of 'd', 'D':  # ad hoc convenience shortcut for f64
-      sc.forward()
-    of 'i', 'I':
-      sc.forward()
-      while sc.ch in {'0'..'9'}:
-        sc.forward()
-    of 'u', 'U':
-      sc.forward()
-      while sc.ch in {'0'..'9'}:
-        sc.forward()
-    else:
-      discard
-  sc.setState(NIM_DEFAULT)
-  
-var kw = newStringOfCap(50)
-proc GetWordType(L: ptr LexAccessor, start, stop: int): WordType =
-  kw.setLen(0)
-  for i in start.. <stop:
-    kw.add L[][i]
-  if support.NimKeywords.contains(kw): return WT_KEYWORD
-  if support.NimTypes.contains(kw): return WT_TYPE
-  if support.NimMagic.contains(kw): return WT_MAGIC
-  result = WT_IDENT
-  
-proc getSymbol(sc: var StyleContext) =
-  var pos = sc.currentPos
-  var styler = sc.styler
-  while sc.more():
-    var c = styler[][pos]
-    case c
-    of 'a'..'z', '0'..'9', '\x80'..'\xFF':
-      if  c == '\226' and
-          styler[][pos+1] == '\128' and
-          styler[][pos+2] == '\147':  # It's a 'magic separator' en-dash Unicode
-        if styler[][pos + magicIdentSeparatorRuneByteWidth] notin SymChars:
-          break
-        inc(pos, magicIdentSeparatorRuneByteWidth)
-      else:
-        inc(pos)
-    of 'A'..'Z':
-      inc(pos)
-    of '_':
-      if sc.chNext notin SymChars: break
-      inc(pos)
-    else: break
-  
-  let wt = styler.GetWordType(sc.currentPos, pos)
-  if wt == WT_KEYWORD:
-    sc.setState(NIM_KEYWORD)
-  elif wt == WT_TYPE:
-    sc.setState(NIM_TYPE)
-  elif wt == WT_MAGIC:
-    sc.setState(NIM_MAGIC)
-  else:
-    sc.setState(NIM_IDENT)
-  sc.forward(pos - sc.currentPos)
-  sc.setState(NIM_DEFAULT)
-  
-proc getString(sc: var StyleContext, rawMode: bool) =  
-  sc.setState(NIM_STRING)
-  sc.forward()          # skip "
-  if sc.ch == '\"' and sc.chNext == '\"':
-    sc.forward(2)   # skip ""
-    while sc.more():
-      if sc.ch == '\"':
-        sc.forward()
-        if sc.ch == '\"' and sc.chNext == '\"': 
-          sc.forward(2)
-          break
-      else:
-        sc.forward()    
-  else:
-    # ordinary string literal
-    while sc.more():
-      var c = sc.ch
-      if c == '\"':
-        if rawMode and sc.chNext == '\"':
-          sc.forward(2)
-        else:
-          sc.forward() # skip '"'
-          break
-      elif c in {'\x0D', '\x0A', chr(0)}:
-        break
-      elif (c == '\\') and not rawMode:
-        sc.getEscapedChar()
-      else:
-        sc.forward()
-  sc.setState(NIM_DEFAULT)
+include leximpl
 
 proc Lex(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) {.stdcall.} =
   var
@@ -361,54 +197,7 @@ proc Lex(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) 
   while sc.more():
     case sc.state
     of NIM_DEFAULT:
-      if sc.ch in SymStartChars - {'r', 'R', 'l'}:
-        sc.getSymbol()
-        continue
-      elif sc.ch == 'l':
-        sc.getSymbol()
-        continue
-      elif sc.ch in {'r', 'R'}:
-        if sc.chNext == '\"':
-          sc.forward()
-          sc.getString(true)
-          continue
-        else:
-          sc.getSymbol()
-          continue
-      elif sc.ch == '#':
-        let state = if sc.chNext == '[': NIM_BLOCK_COMMENT else: NIM_LINE_COMMENT
-        sc.setState(state)
-      elif sc.ch == '\'':
-        sc.getCharacter()
-        continue
-      elif sc.ch in {'0'..'9'}:
-        sc.getNumber()
-        continue
-      elif sc.ch == '{':
-        if sc.chNext == '.': sc.setState(NIM_PRAGMA)
-        else:
-          sc.setState(NIM_BRACES)
-          sc.forward()
-          sc.setState(NIM_DEFAULT)
-          continue
-      elif sc.ch == '\"':
-        # check for extended raw string literal:
-        let rawMode = sc.currentPos > 0 and sc.chPrev in SymChars
-        sc.getString(rawMode)
-        continue
-      elif sc.ch in {'{', '[', '(', '}', ']', ')'}:
-        sc.setState(NIM_BRACES)
-        sc.forward()
-        sc.setState(NIM_DEFAULT)
-        continue
-      else:
-        if sc.ch in OpChars:
-          sc.setState(NIM_OPERATOR)
-          sc.forward()
-          while sc.ch in OpChars:
-            sc.forward()
-          sc.setState(NIM_DEFAULT)
-          continue
+      DEFAULT_STATE_BODY
     of NIM_LINE_COMMENT:
       if (sc.ch == '\x0D') or (sc.ch == '\x0A'):
         sc.setState(NIM_DEFAULT)
@@ -428,9 +217,142 @@ proc Lex(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) 
     sc.forward()
   sc.complete()
 
-proc Fold(x: pointer, startPos, lengthDoc: int, initStyle: int, pAccess: IDocument) {.stdcall.} =
-  discard
+proc IsCommentLine(L: var LexAccessor, line: int): bool =
+  let pos = L.lineStart(line)
+  let eol_pos = L.lineStart(line + 1) - 1
 
+  for i in pos.. <eol_pos:
+    let ch = L[i]
+    if ch == '#': return true
+    elif (ch != ' ') and (ch != '\t'): return false
+  result = false
+
+proc IsQuoteLine(L: LexAccessor, line: int): bool =
+  let style = L.styleAt(L.lineStart(line)) and 31
+  result = style == NIM_STRING_TRIPLE
+
+#this algorithm is taken from scintilla python fold code
+proc Fold(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) {.stdcall.} =
+  var styler = initLexAccessor(pAccess)
+
+  let maxPos = startPos + docLen
+  let maxLines = if maxPos == styler.length(): styler.getLine(maxPos) else: styler.getLine(maxPos - 1) #Requested last line
+  let docLines = styler.getLine(styler.length()) # Available last line
+
+  # Backtrack to previous non-blank line so we can determine indent level
+  # for any white space lines (needed esp. within triple quoted strings)
+  # and so we can fix any preceding fold level (which is why we go back
+  # at least one line in all cases)
+  var
+    spaceFlags: WSTypes
+    lineCurrent = styler.getLine(startPos)
+    indentCurrent = styler.indentAmount(lineCurrent, spaceFlags)
+
+  while lineCurrent > 0:
+    dec lineCurrent
+    indentCurrent = styler.indentAmount(lineCurrent, spaceFlags)
+    if ((indentCurrent and SC_FOLDLEVELWHITEFLAG) == 0) and
+       (not styler.IsCommentLine(lineCurrent)) and
+       (not styler.IsQuoteLine(lineCurrent)): break
+
+  var indentCurrentLevel = indentCurrent and SC_FOLDLEVELNUMBERMASK
+  # Set up initial loop state
+  var startPos2 = styler.lineStart(lineCurrent)
+  var prev_state = NIM_DEFAULT and 31
+  if lineCurrent >= 1:
+    prev_state = styler.styleAt(startPos2 - 1) and 31
+  var prevQuote = prev_state == NIM_STRING_TRIPLE
+ 
+  # Process all characters to end of requested range or end of any triple quote
+  # that hangs over the end of the range.  Cap processing in all cases
+  # to end of document (in case of unclosed quote at end).
+  while (lineCurrent <= docLines) and ((lineCurrent <= maxLines) or prevQuote):
+    # Gather info
+    var 
+      lev = indentCurrent
+      lineNext = lineCurrent + 1
+      indentNext = indentCurrent
+      quote = false
+      
+    if lineNext <= docLines:
+      # Information about next line is only available if not at end of document
+      indentNext = styler.indentAmount(lineNext, spaceFlags)
+      var lookAtPos = if styler.lineStart(lineNext) == styler.length(): styler.length() - 1 else: styler.lineStart(lineNext)
+      var style = styler.styleAt(lookAtPos) and 31
+      quote = style == NIM_STRING_TRIPLE
+  
+    let quote_start = quote and not prevQuote
+    let quote_continue = quote and prevQuote
+    if not quote or not prevQuote:
+      indentCurrentLevel = indentCurrent and SC_FOLDLEVELNUMBERMASK
+      
+    if quote: indentNext = indentCurrentLevel
+    if (indentNext and SC_FOLDLEVELWHITEFLAG) != 0:
+      indentNext = SC_FOLDLEVELWHITEFLAG or indentCurrentLevel
+  
+    if quote_start:
+      # Place fold point at start of triple quoted string
+      lev = lev or SC_FOLDLEVELHEADERFLAG
+    elif quote_continue or prevQuote:
+      # Add level to rest of lines in the string
+      lev = lev + 1
+  
+    # Skip past any blank lines for next indent level info we skip also
+    # comments (all comments, not just those starting in column 0)
+    # which effectively folds them into surrounding code rather
+    # than screwing up folding.
+  
+    while (not quote and (lineNext < docLines) and
+      (((indentNext and SC_FOLDLEVELWHITEFLAG) != 0) or
+      (lineNext <= docLines and styler.IsCommentLine(lineNext)))):
+        inc lineNext
+        indentNext = styler.indentAmount(lineNext, spaceFlags)
+  
+    let levelAfterComments = indentNext and SC_FOLDLEVELNUMBERMASK
+    let levelBeforeComments = max(indentCurrentLevel, levelAfterComments)
+  
+    # Now set all the indent levels on the lines we skipped
+    # Do this from end to start.  Once we encounter one line
+    # which is indented more than the line after the end of
+    # the comment-block, use the level of the block before
+  
+    var skipLine = lineNext - 1
+    var skipLevel = levelAfterComments
+    let foldCompact = false
+  
+    while skipLine > lineCurrent:
+      var skipLineIndent = styler.indentAmount(skipLine, spaceFlags)
+      if foldCompact:
+        if (skipLineIndent and SC_FOLDLEVELNUMBERMASK) > levelAfterComments:
+          skipLevel = levelBeforeComments
+        var whiteFlag = skipLineIndent and SC_FOLDLEVELWHITEFLAG
+        styler.setLevel(skipLine, skipLevel or whiteFlag)
+      else:
+        let a = (skipLineIndent and SC_FOLDLEVELNUMBERMASK) > levelAfterComments
+        let b = (skipLineIndent and SC_FOLDLEVELWHITEFLAG) == 0
+        if a and b and (not styler.IsCommentLine(skipLine)):
+          skipLevel = levelBeforeComments
+        styler.setLevel(skipLine, skipLevel)
+      dec skipLine
+  
+    # Set fold header on non-quote line
+    if (not quote) and ((indentCurrent and SC_FOLDLEVELWHITEFLAG) == 0):
+      if ((indentCurrent and SC_FOLDLEVELNUMBERMASK) < (indentNext and SC_FOLDLEVELNUMBERMASK)):
+        lev = lev or SC_FOLDLEVELHEADERFLAG
+  
+    # Keep track of triple quote state of previous line
+    prevQuote = quote
+  
+    # Set fold level for this line and move to next line
+    if foldCompact: styler.setLevel(lineCurrent, lev)
+    else: styler.setLevel(lineCurrent, lev and not SC_FOLDLEVELWHITEFLAG)
+    indentCurrent = indentNext
+    lineCurrent = lineNext
+  
+  # NOTE: Cannot set level of last line here because indentCurrent doesn't have
+  # header flag set; the loop above is crafted to take care of this case!
+  # styler.setLevel(lineCurrent, indentCurrent)
+  
 proc PrivateCall(x: pointer, operation: int, ud: pointer): pointer {.stdcall.} = nil
 
 proc copyToBuff(str: string; buff: ptr TCHAR; len: int) =
