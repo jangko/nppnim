@@ -1,8 +1,13 @@
 # nppnim
-a notepad++ plugin contains lexer for Nim lang
+a notepad++ plugin contains syntax highlighter and code folding for Nim lang
+
+- - -
+
+After I removed the cpp stuff, this plugin now written 100% in Nim.
+This means this plugin also can serve as a model for anyone who want to write their own plugin
+compatible with recent notepad++ in any language that can produce a DLL.
 
 requirements(for notepad++ 32bit):
-
   * Nim32
   * MingW32
   
@@ -14,4 +19,5 @@ how to test:
   * put nppnim.xml in NPPINSTDIR\plugins\config
 
 beware:
-  if there exist more than one npp plugin written in Nim, please use compiler switch "-d:useNimRtl", (I never tested it before, but the doc says like that)
+  if there exist more than one npp plugin written in Nim, please use compiler switch "-d:useNimRtl", 
+  (I never tested it before, but the documentation says like that)

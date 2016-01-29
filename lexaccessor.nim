@@ -49,8 +49,6 @@ proc initLexAccessor*(pAccess: IDocument): LexAccessor =
   result.startSeg = 0
   result.startPosStyling = 0
   result.documentVersion = pAccess.nvVersion()
-  
-  #Prevent warnings by static analyzers about uninitialized buf and styleBuf.
   result.buf[0] = chr(0)
   result.styleBuf[0] = chr(0)
  

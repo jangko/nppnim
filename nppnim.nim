@@ -5,41 +5,10 @@
 #
 #-----------------------------------------
 import
-  winapi, scintilla, nppmsg, menucmdid, support, strutils,
-  lexaccessor, stylecontext, sets, etcpriv
+  winapi, scintilla, nppmsg, menucmdid, support, 
+  lexaccessor, stylecontext, sets, etcpriv, utils
 
 {.link: "resource/resource.o".}
-
-const
-  nbChar = 64
-
-type
-  NppData* {.pure, final.} = object
-    nppHandle*: HWND
-    sciMainHandle*: HWND
-    sciSecondHandle*: HWND
-
-  NppDataCopy* {.bycopy.} = NppData
-
-  PFUNCSETINFO* = proc(nd: NppDataCopy) {.cdecl.}
-  PFUNCPLUGINCMD* = proc() {.cdecl.}
-  PBENOTIFIED* = proc(scn: var SCNotification) {.cdecl.}
-  PMESSAGEPROC* = proc(Message: WINUINT, wParam: WPARAM, lParam: LPARAM): LRESULT {.cdecl.}
-
-  ShortcutKey* {.pure, final.} = object
-    isCtrl*: bool
-    isAlt*: bool
-    isShift*: bool
-    key*: UCHAR
-
-  FuncItem* {.pure, final.} = object
-    itemName*: array[nbChar, TCHAR]
-    pFunc*: PFUNCPLUGINCMD
-    cmdID*: cint
-    init2Check*: bool
-    pShKey*: ptr ShortcutKey
-
-  PFUNCGETFUNCSARRAY* = proc(x: ptr int): ptr FuncItem {.cdecl.}
 
 const
   nbFunc = 1
@@ -47,19 +16,6 @@ const
 var
   funcItem: array[nbFunc, FuncItem]
   nppData: NppData
-
-proc lstrcpy(a: var openArray[TCHAR], b: string) =
-  when defined(winUniCode):
-    let x = newWideCString(b)
-  else:
-    let x = b.cstring
-
-  var i = 0
-  while x[i].int != 0:
-    a[i] = TCHAR(x[i])
-    inc i
-
-  a[i] = TCHAR(0)
 
 # This function help you to initialize your plugin commands
 proc setCommand(idx: int, cmdName: string, pFunc: PFUNCPLUGINCMD, sk: ptr ShortcutKey, check0nInit: bool): bool =
@@ -74,12 +30,10 @@ proc setCommand(idx: int, cmdName: string, pFunc: PFUNCPLUGINCMD, sk: ptr Shortc
 
 # Initialize your plugin data here
 # It will be called while plugin loading
-proc pluginInit(hModule: HMODULE) =
-  discard
+proc pluginInit(hModule: HMODULE) = discard
 
 # Here you can do the clean up, save the parameters (if any) for the next session
-proc pluginCleanUp() =
-  discard
+proc pluginCleanUp() = discard
 
 #proc getSciHandle(): SciHandle =
 #  # Get the current scintilla
@@ -110,6 +64,7 @@ proc commandMenuCleanUp() =
   # Don't forget to deallocate your shortcut here
   discard
 
+# this is needed to initialize GC, global variable initialization, etc
 proc NimMain() {.cdecl, importc.}
 
 proc DllMain(hModule: HANDLE, reasonForCall: DWORD, lpReserved: LPVOID): WINBOOL {.stdcall, exportc, dynlib.} =
@@ -128,6 +83,7 @@ proc DllMain(hModule: HANDLE, reasonForCall: DWORD, lpReserved: LPVOID): WINBOOL
     discard
   result = TRUE
 
+#the next 6 procs are standard notepad++ plugin interface, all must be cdec callconv
 proc setInfo(nd: NppDataCopy) {.cdecl, exportc, dynlib.} =
   nppData = nd
   commandMenuInit()
@@ -145,15 +101,12 @@ proc getFuncsArray(n: ptr int): ptr FuncItem {.cdecl, exportc, dynlib.} =
   n[] = nbFunc
   result = addr(funcItem[0])
 
-proc beNotified(scn: ptr SCNotification) {.cdecl, exportc, dynlib.} =
-  discard
-
+proc beNotified(scn: ptr SCNotification) {.cdecl, exportc, dynlib.} = discard
 proc messageProc(Message: WINUINT, wParam: WPARAM, lParam: LPARAM): LRESULT {.cdecl, exportc, dynlib.} = TRUE
-
 proc isUnicode(): WINBOOL {.cdecl, exportc, dynlib.} = TRUE
 
 const
-  # Style constants 0..31 max. Correspond to npp.xml settings.
+  # Style constants 0..31 max. Correspond to nppnim.xml settings.
   NIM_DEFAULT = 0
   NIM_KEYWORD = 1
   NIM_LINE_COMMENT = 2
@@ -355,22 +308,7 @@ proc Fold(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument)
   
 proc PrivateCall(x: pointer, operation: int, ud: pointer): pointer {.stdcall.} = nil
 
-proc copyToBuff(str: string; buff: ptr TCHAR; len: int) =
-  var
-    buflen = min(str.len, len-1)
-    b = str.substr(0, buflen)
-
-  when defined(winUniCode):
-    let src = newWideCString(b)
-  else:
-    let src = b.cstring
-
-  if buflen > 0:
-    inc buflen
-    copyMem(buff, src.unsafeAddr, sizeof(TCHAR) * buflen)
-
-proc GetLexerCount(): int {.stdcall, exportc, dynlib.} =
-  result = 1
+proc GetLexerCount(): int {.stdcall, exportc, dynlib.} = 1
 
 proc GetLexerName(idx: int, name: pointer, nameLen: int) {.stdcall, exportc, dynlib.} =
   let str = "Nim"
@@ -380,29 +318,23 @@ proc GetLexerName(idx: int, name: pointer, nameLen: int) {.stdcall, exportc, dyn
 proc GetLexerStatusText(idx: int, desc: ptr TCHAR, descLen: int) {.stdcall, exportc, dynlib.} =
   copyToBuff("Nim Lang", desc, descLen)
 
-type
-  ILexer* {.pure.} = object
-    vTable*: pointer
-
-  LexerFactoryProc* = proc(): ptr ILexer {.stdcall.}
-
-var ilex: ILexer
-var lex: array[0..10, pointer]
+var lex: ILexer
+var vTable: VTABLE
 
 proc lexFactory(): ptr ILexer {.stdcall.} =
-  lex[0] = Version
-  lex[1] = Release
-  lex[2] = PropertyNames
-  lex[3] = PropertyType
-  lex[4] = DescribeProperty
-  lex[5] = PropertySet
-  lex[6] = DescribeWordListSets
-  lex[7] = WordListSet
-  lex[8] = Lex
-  lex[9] = Fold
-  lex[10] = PrivateCall
-  ilex.vTable = lex.addr
-  result = ilex.addr
+  vTable[0] = Version
+  vTable[1] = Release
+  vTable[2] = PropertyNames
+  vTable[3] = PropertyType
+  vTable[4] = DescribeProperty
+  vTable[5] = PropertySet
+  vTable[6] = DescribeWordListSets
+  vTable[7] = WordListSet
+  vTable[8] = Lex
+  vTable[9] = Fold
+  vTable[10] = PrivateCall
+  lex.vTable = vTable.addr
+  result = lex.addr
 
 proc GetLexerFactory(idx: int): LexerFactoryProc {.stdcall, exportc, dynlib.} =
   result = lexFactory
