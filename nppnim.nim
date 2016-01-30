@@ -83,7 +83,7 @@ proc DllMain(hModule: HANDLE, reasonForCall: DWORD, lpReserved: LPVOID): WINBOOL
     discard
   result = TRUE
 
-#the next 6 procs are standard notepad++ plugin interface, all must be cdec callconv
+#the next 6 procs are standard notepad++ plugin interface, all must be cdecl callconv
 proc setInfo(nd: NppDataCopy) {.cdecl, exportc, dynlib.} =
   nppData = nd
   commandMenuInit()
