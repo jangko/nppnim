@@ -1,11 +1,15 @@
-// Resource file for Scintilla
-// Copyright 1998-2010 by Neil Hodgson <neilh@scintilla.org>
-// The License.txt file describes the conditions under which this software may be distributed.
+/* Copyright (c) 2016 Andri Lim
+
+ Distributed under the MIT license
+ (See accompanying file LICENSE.txt)
+
+-----------------------------------------
+*/
 
 #include <windows.h>
 
-#define VERSION_STRING "0.1.0"
-#define VERSION_WORDS 0, 1, 0, 0
+#define VERSION_STRING "1.0.0"
+#define VERSION_WORDS 1, 0, 0, 0
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION	VERSION_WORDS

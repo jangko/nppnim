@@ -12,18 +12,18 @@ proc lstrcpy*(a: var openArray[TCHAR], b: string) =
     inc i
 
   a[i] = TCHAR(0)
-  
+
 proc copyToBuff*(str: string; buff: ptr TCHAR; len: int) =
   var
     buflen = min(str.len, len-1)
     b = str.substr(0, buflen)
 
-  when defined(winUniCode): 
+  when defined(winUniCode):
     let src = newWideCString(b)
-  else: 
+  else:
     let src = b.cstring
 
   if buflen > 0:
     inc buflen
     copyMem(buff, src.unsafeAddr, sizeof(TCHAR) * buflen)
-   
+

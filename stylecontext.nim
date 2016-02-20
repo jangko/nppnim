@@ -11,12 +11,12 @@ type
     styler*: ptr LexAccessor
     endPos: int
     lengthDocument: int
-    
+
     #Used for optimizing GetRelativeCharacter
     posRelative: int
     currentPosLastRelative: int
     offsetRelative: int
-    
+
     currentPos*: int
     currentLine: int
     lineDocEnd: int
@@ -29,7 +29,7 @@ type
     width: int
     chNext*: char
     widthNext: int
-  
+
 proc makeLowerCase(ch: char): char =
   if (ch < 'A') or (ch > 'Z'): return ch
   else: result = (ch.ord - 'A'.ord + 'a'.ord).chr
@@ -37,14 +37,14 @@ proc makeLowerCase(ch: char): char =
 proc getNextChar*(ctx: var StyleContext) =
   ctx.chNext = safeGetCharAt(ctx.styler[], ctx.currentPos + ctx.width, chr(0))
   ctx.widthNext = 1
-    
+
   #End of line determined from line end position, allowing CR, LF,
   #CRLF and Unicode line ends as set by document.
   if ctx.currentLine < ctx.lineDocEnd:
     ctx.atLineEnd = ctx.currentPos >= (ctx.lineStartNext-1)
   else: #Last line
     ctx.atLineEnd = ctx.currentPos >= ctx.lineStartNext
-  
+
 proc initStyleContext*(startPos, length, initStyle: int, styler: ptr LexAccessor, chMask = '\xFF'): StyleContext =
   result.styler = styler
   result.endPos = startPos + length
@@ -54,12 +54,12 @@ proc initStyleContext*(startPos, length, initStyle: int, styler: ptr LexAccessor
   result.currentPos = startPos
   result.currentLine = -1
   result.lineStartNext = -1
-  result.atLineEnd = false 
+  result.atLineEnd = false
   result.state = initStyle and chMask.ord # Mask off all bits which aren't in the chMask.
   result.chPrev = 0.chr
   result.ch = 0.chr
   result.width = 0
-  result.chNext = 0.chr 
+  result.chNext = 0.chr
   result.widthNext = 1
   styler[].startAt(startPos)
   styler[].startSegment(startPos)
@@ -70,7 +70,7 @@ proc initStyleContext*(startPos, length, initStyle: int, styler: ptr LexAccessor
     inc result.endPos
   result.lineDocEnd = styler[].getLine(result.lengthDocument)
   result.atLineStart = styler[].lineStart(result.currentLine) == startPos
-  
+
   # Variable width is now 0 so GetNextChar gets the char at currentPos into chNext/widthNext
   result.width = 0
   result.getNextChar()
@@ -129,7 +129,7 @@ proc forwardSetState*(ctx: var StyleContext, state: int) =
 proc lengthCurrent*(ctx: StyleContext): int =
   result = ctx.currentPos - ctx.styler[].getStartSegment()
 
-proc getRelative*(ctx: StyleContext, n: int): char = 
+proc getRelative*(ctx: StyleContext, n: int): char =
   result = ctx.styler[].safeGetCharAt(ctx.currentPos + n, chr(0))
 
 proc getRelativeCharacter*(ctx: StyleContext, n: int): char =
@@ -150,9 +150,9 @@ proc match*(ctx: StyleContext, s: cstring): bool =
   if s[i] == chr(0): return true
   if ctx.chNext != s[i]: return false
   inc i
-  
+
   while s[i].ord != 0:
-    if s[i] != ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0)): 
+    if s[i] != ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0)):
       return false
     inc i
   result = true
@@ -163,9 +163,9 @@ proc matchIgnoreCase*(ctx: StyleContext, s: cstring): bool =
   inc i
   if makeLowerCase(ctx.chNext) != s[i]: return false
   inc i
-  
+
   while s[i].ord != 0:
-    if s[i] != makeLowerCase(ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0))): 
+    if s[i] != makeLowerCase(ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0))):
       return false
     inc i
   result = true
@@ -177,7 +177,7 @@ proc getRange(start, stop: int, styler: var LexAccessor, s: var cstring, len: in
     inc i
   s[i] = chr(0)
 
-proc getCurrent*(ctx: StyleContext, s: var cstring, len: int) = 
+proc getCurrent*(ctx: StyleContext, s: var cstring, len: int) =
   getRange(ctx.styler[].getStartSegment(), ctx.currentPos - 1, ctx.styler[], s, len)
 
 proc getRangeLowered(start, stop: int, styler: var LexAccessor, s: var cstring, len: int) =
@@ -187,5 +187,5 @@ proc getRangeLowered(start, stop: int, styler: var LexAccessor, s: var cstring, 
     inc i
   s[i] = chr(0)
 
-proc getCurrentLowered*(ctx: StyleContext, s: var cstring, len: int) = 
+proc getCurrentLowered*(ctx: StyleContext, s: var cstring, len: int) =
   getRangeLowered(ctx.styler[].getStartSegment(), ctx.currentPos - 1, ctx.styler[], s, len)

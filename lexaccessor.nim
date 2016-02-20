@@ -14,16 +14,16 @@ const
         in case there is some backtracking. ]#
   bufferSize = 4000
   slopSize = bufferSize div 8
-  
+
 type
   EncodingType* = enum
     enc8bit, encUnicode, encDBCS
-  
+
   WSType* = enum
     wsSpace, wsTab, wsSpaceTab, wsInconsistent
-    
+
   WSTypes* = set[WSType]
-  
+
   LexAccessor* = object
     pAccess: IDocument
     buf: array[0..bufferSize, char]
@@ -37,7 +37,7 @@ type
     startSeg: int
     startPosStyling: int
     documentVersion: int
-    
+
 proc initLexAccessor*(pAccess: IDocument): LexAccessor =
   result.pAccess = pAccess
   result.startPos = extremePosition
@@ -51,24 +51,24 @@ proc initLexAccessor*(pAccess: IDocument): LexAccessor =
   result.documentVersion = pAccess.nvVersion()
   result.buf[0] = chr(0)
   result.styleBuf[0] = chr(0)
- 
+
   case result.codePage
   of 65001: result.encodingType = encUnicode
   of 932, 936, 949, 950, 1361:
     result.encodingType = encDBCS
   else: result.encodingType = enc8bit
-  
+
 proc fill*(L: var LexAccessor, pos: int) =
   L.startPos = pos - slopSize
   if (L.startPos + bufferSize) > L.lenDoc:
     L.startPos = L.lenDoc - bufferSize
-  
+
   if L.startPos < 0: L.startPos = 0
   L.endPos = L.startPos + bufferSize
   if L.endPos > L.lenDoc: L.endPos = L.lenDoc
   L.pAccess.nvGetCharRange(L.buf, L.startPos, L.endPos - L.startPos)
   L.buf[L.endPos - L.startPos] = chr(0)
-  
+
 proc `[]`*(L: var LexAccessor, pos: int): char =
   if (pos < L.startPos) or (pos >= L.endPos): L.fill(pos)
   result = L.buf[pos - L.startPos]
@@ -93,11 +93,11 @@ proc match*(L: var LexAccessor, pos: int, s: cstring): bool =
 
 proc styleAt*(L: LexAccessor, pos: int): int =
   result = L.pAccess.nvStyleAt(pos).ord
-  
+
 proc getLine*(L: LexAccessor, pos: int): int =
   result = L.pAccess.nvLineFromPosition(pos)
 
-proc lineStart*(L: LexAccessor, line: int): int = 
+proc lineStart*(L: LexAccessor, line: int): int =
   result = L.pAccess.nvLineStart(line)
 
 proc lineEnd*(L: var LexAccessor, line: int): int =
@@ -111,7 +111,7 @@ proc lineEnd*(L: var LexAccessor, line: int): int =
       return startNext - 2
     else:
       return startNext - 1
-      
+
 proc levelAt*(L: LexAccessor, line: int): int =
   result = L.pAccess.nvGetLevel(line)
 
@@ -168,7 +168,7 @@ proc indicatorFill*(L: LexAccessor, start, stop, indicator, value: int) =
   L.pAccess.nvDecorationFillRange(start, value, stop - start)
 
 proc indentAmount*(L: var LexAccessor, line: int, flags: var WSTypes): int =
-  var 
+  var
     stop = L.length()
     spaceFlags: WSTypes
     pos = L.lineStart(line)
@@ -176,12 +176,12 @@ proc indentAmount*(L: var LexAccessor, line: int, flags: var WSTypes): int =
     indent = 0
     inPrevPrefix = line > 0
     posPrev = if inPrevPrefix: L.lineStart(line-1) else: 0
-    
+
   # Determines the indentation level of the current line and also checks for consistent
   # indentation compared to the previous line.
   # Indentation is judged consistent when the indentation whitespace of each line lines
   # the same or the indentation of one line is a prefix of the other.
-  
+
   while ((ch == ' ') or (ch == '\t')) and (pos < stop):
     if inPrevPrefix:
       var chPrev = L[posPrev]
@@ -190,7 +190,7 @@ proc indentAmount*(L: var LexAccessor, line: int, flags: var WSTypes): int =
         if chPrev != ch: spaceFlags.incl(wsInconsistent)
       else:
         inPrevPrefix = false
-    
+
     if ch == ' ':
       spaceFlags.incl(wsSpace)
       inc indent
@@ -199,14 +199,14 @@ proc indentAmount*(L: var LexAccessor, line: int, flags: var WSTypes): int =
       if spaceFlags.contains(wsSpace):
         spaceFlags.incl(wsSpaceTab)
       indent = (indent div 8 + 1) * 8
-    
+
     inc(pos)
     ch = L[pos]
-  
+
   flags = spaceFlags
   inc(indent, SC_FOLDLEVELBASE)
   # if completely empty line or the start of a comment...
-  
+
   if (L.lineStart(line) == L.length()) or (ch in {' ', '\t', '\x0A', '\r'}):
     return indent or SC_FOLDLEVELWHITEFLAG
   else:

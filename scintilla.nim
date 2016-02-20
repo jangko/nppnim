@@ -1193,7 +1193,7 @@ proc getCharRange*(sci: SciHandle, buf: cstring, start, stop: int): int =
   tr.chrg.cpMax = stop.Sci_PositionCR
   tr.lpstrText =  buf
   result = sci.scisend(SCI_GETTEXTRANGE, 0, cast[sptr_t](tr.addr))
-  
+
 proc allocate*(sci: SciHandle; bytes: int) =
   sci.scisend(SCI_ALLOCATE, bytes)
 
@@ -1598,7 +1598,7 @@ proc setStyling*(sci: SciHandle; length, style: int) =
 
 proc setStylingEx*(sci: SciHandle; length: int; styles: cstring) =
   sci.scisend(SCI_SETSTYLINGEX, length, cast[sptr_t](styles))
-  
+
 proc setLineState*(sci: SciHandle; line, state: int) =
   sci.scisend(SCI_SETLINESTATE, line, state.sptr_t)
 
@@ -1734,15 +1734,15 @@ proc callTipUseStyle*(sci: SciHandle; tabSize: int) =
 # code page
 proc setCodePage*(sci: SciHandle, cp: int) =
   sci.scisend(SCI_SETCODEPAGE, cp)
-  
+
 proc getCodePage*(sci: SciHandle): int =
   result = sci.scisend(SCI_GETCODEPAGE)
 
-# fold level  
+# fold level
 
 proc setFoldLevel*(sci: SciHandle, line, level: int) =
   sci.scisend(SCI_SETFOLDLEVEL, line, level.sptr_t)
-  
+
 proc getFoldLevel*(sci: SciHandle, line: int): int =
   result = sci.scisend(SCI_GETFOLDLEVEL, line)
 

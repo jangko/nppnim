@@ -5,8 +5,8 @@
 #
 #-----------------------------------------
 import
-  winapi, scintilla, nppmsg, menucmdid, support, 
-  lexaccessor, stylecontext, sets, etcpriv, utils
+  winapi, scintilla, nppmsg, menucmdid, support,
+  lexaccessor, stylecontext, sets, etcpriv, utils, strutils
 
 {.link: "resource/resource.o".}
 
@@ -101,8 +101,16 @@ proc getFuncsArray(n: ptr int): ptr FuncItem {.cdecl, exportc, dynlib.} =
   n[] = nbFunc
   result = addr(funcItem[0])
 
-proc beNotified(scn: ptr SCNotification) {.cdecl, exportc, dynlib.} = discard
-proc messageProc(Message: WINUINT, wParam: WPARAM, lParam: LPARAM): LRESULT {.cdecl, exportc, dynlib.} = TRUE
+proc beNotified(scn: ptr SCNotification) {.cdecl, exportc, dynlib.} =
+  # this is a hacky whacky approach to bug #2: the lexer not being called
+  # after the new file just saved
+  if scn.nmhdr.code == NPPN_FILESAVED:
+    sendMessage(nppData.nppHandle, NPPM_MENUCOMMAND, 0, IDM_EDIT_UNDO)
+    sendMessage(nppData.nppHandle, NPPM_MENUCOMMAND, 0, IDM_EDIT_REDO)
+
+proc messageProc(Message: WINUINT, wParam: WPARAM, lParam: LPARAM): LRESULT {.cdecl, exportc, dynlib.} =
+  result = TRUE
+
 proc isUnicode(): WINBOOL {.cdecl, exportc, dynlib.} = TRUE
 
 const
@@ -142,7 +150,7 @@ proc WordListSet(x: pointer, n: int, wl: cstring): int {.stdcall.} = -1
 
 include leximpl
 
-proc Lex(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) {.stdcall.} =
+proc Lex(x: pointer, startPos, docLen, initStyle: int, pAccess: IDocument) {.stdcall.} =
   var
     styler = initLexAccessor(pAccess)
     sc = initStyleContext(startPos, docLen, initStyle, styler.addr)
@@ -164,13 +172,13 @@ proc Lex(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) 
         sc.forward()
         sc.forward()
         sc.setState(NIM_DEFAULT)
-    of NIM_STRING_TRIPLE:    
+    of NIM_STRING_TRIPLE:
       if sc.ch == '\\':
         sc.forward()
       elif sc.match "\"\"\"":
         sc.forward()
         sc.forward()
-        sc.forwardSetState(NIM_DEFAULT)        
+        sc.forwardSetState(NIM_DEFAULT)
     else:
       discard
 
@@ -222,64 +230,64 @@ proc Fold(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument)
   if lineCurrent >= 1:
     prev_state = styler.styleAt(startPos2 - 1) and 31
   var prevQuote = prev_state == NIM_STRING_TRIPLE
- 
+
   # Process all characters to end of requested range or end of any triple quote
   # that hangs over the end of the range.  Cap processing in all cases
   # to end of document (in case of unclosed quote at end).
   while (lineCurrent <= docLines) and ((lineCurrent <= maxLines) or prevQuote):
     # Gather info
-    var 
+    var
       lev = indentCurrent
       lineNext = lineCurrent + 1
       indentNext = indentCurrent
       quote = false
-      
+
     if lineNext <= docLines:
       # Information about next line is only available if not at end of document
       indentNext = styler.indentAmount(lineNext, spaceFlags)
       var lookAtPos = if styler.lineStart(lineNext) == styler.length(): styler.length() - 1 else: styler.lineStart(lineNext)
       var style = styler.styleAt(lookAtPos) and 31
       quote = style == NIM_STRING_TRIPLE
-  
+
     let quote_start = quote and not prevQuote
     let quote_continue = quote and prevQuote
     if not quote or not prevQuote:
       indentCurrentLevel = indentCurrent and SC_FOLDLEVELNUMBERMASK
-      
+
     if quote: indentNext = indentCurrentLevel
     if (indentNext and SC_FOLDLEVELWHITEFLAG) != 0:
       indentNext = SC_FOLDLEVELWHITEFLAG or indentCurrentLevel
-  
+
     if quote_start:
       # Place fold point at start of triple quoted string
       lev = lev or SC_FOLDLEVELHEADERFLAG
     elif quote_continue or prevQuote:
       # Add level to rest of lines in the string
       lev = lev + 1
-  
+
     # Skip past any blank lines for next indent level info we skip also
     # comments (all comments, not just those starting in column 0)
     # which effectively folds them into surrounding code rather
     # than screwing up folding.
-  
+
     while (not quote and (lineNext < docLines) and
       (((indentNext and SC_FOLDLEVELWHITEFLAG) != 0) or
       (lineNext <= docLines and styler.IsCommentLine(lineNext)))):
         inc lineNext
         indentNext = styler.indentAmount(lineNext, spaceFlags)
-  
+
     let levelAfterComments = indentNext and SC_FOLDLEVELNUMBERMASK
     let levelBeforeComments = max(indentCurrentLevel, levelAfterComments)
-  
+
     # Now set all the indent levels on the lines we skipped
     # Do this from end to start.  Once we encounter one line
     # which is indented more than the line after the end of
     # the comment-block, use the level of the block before
-  
+
     var skipLine = lineNext - 1
     var skipLevel = levelAfterComments
     let foldCompact = false
-  
+
     while skipLine > lineCurrent:
       var skipLineIndent = styler.indentAmount(skipLine, spaceFlags)
       if foldCompact:
@@ -294,25 +302,25 @@ proc Fold(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument)
           skipLevel = levelBeforeComments
         styler.setLevel(skipLine, skipLevel)
       dec skipLine
-  
+
     # Set fold header on non-quote line
     if (not quote) and ((indentCurrent and SC_FOLDLEVELWHITEFLAG) == 0):
       if ((indentCurrent and SC_FOLDLEVELNUMBERMASK) < (indentNext and SC_FOLDLEVELNUMBERMASK)):
         lev = lev or SC_FOLDLEVELHEADERFLAG
-  
+
     # Keep track of triple quote state of previous line
     prevQuote = quote
-  
+
     # Set fold level for this line and move to next line
     if foldCompact: styler.setLevel(lineCurrent, lev)
     else: styler.setLevel(lineCurrent, lev and not SC_FOLDLEVELWHITEFLAG)
     indentCurrent = indentNext
     lineCurrent = lineNext
-  
+
   # NOTE: Cannot set level of last line here because indentCurrent doesn't have
   # header flag set; the loop above is crafted to take care of this case!
   # styler.setLevel(lineCurrent, indentCurrent)
-  
+
 proc PrivateCall(x: pointer, operation: int, ud: pointer): pointer {.stdcall.} = nil
 
 proc GetLexerCount(): int {.stdcall, exportc, dynlib.} = 1

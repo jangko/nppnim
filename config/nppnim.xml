@@ -13,7 +13,7 @@
         <!-- desc is what shows up in the styler configuator. -->
         <!-- ext is the "user defined" one. -->
         <!-- excluded is whether is shows up in the language menu. (Can be changed in the settings by the user the normal way.) -->
-        <LexerType name="Nim" desc="Nim Lang" ext="" excluded="no">
+        <LexerType name="Nim" desc="Nim Lang" excluded="no">
             <!-- name is what shows up in the styler config for that style. -->
             <!-- styleID can be 0 through 31. -->
             <!-- keywordClass can be a number between 0 and 8 or the words that are normally used. -->
