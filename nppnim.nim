@@ -164,6 +164,13 @@ proc Lex(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) 
         sc.forward()
         sc.forward()
         sc.setState(NIM_DEFAULT)
+    of NIM_STRING_TRIPLE:    
+      if sc.ch == '\\':
+        sc.forward()
+      elif sc.match "\"\"\"":
+        sc.forward()
+        sc.forward()
+        sc.forwardSetState(NIM_DEFAULT)        
     else:
       discard
 

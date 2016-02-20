@@ -149,14 +149,7 @@ proc getString(sc: var StyleContext, rawMode: bool) =
   if sc.ch == '\"' and sc.chNext == '\"':
     sc.changeState(NIM_STRING_TRIPLE)
     sc.forward(2)   # skip ""
-    while sc.more():
-      if sc.ch == '\"':
-        sc.forward()
-        if sc.ch == '\"' and sc.chNext == '\"':
-          sc.forward(2)
-          break
-      else:
-        sc.forward()
+    return
   else:
     # ordinary string literal
     while sc.more():
