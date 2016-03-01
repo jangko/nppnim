@@ -21,3 +21,6 @@ how to test:
 beware:
   if there exist more than one npp plugin written in Nim, please use compiler switch "-d:useNimRtl", 
   (I never tested it before, but the documentation says like that)
+  
+download:
+  * Precompiled binaries can be downloaded [here](https://github.com/jangko/nppnim/releases)
