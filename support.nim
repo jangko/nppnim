@@ -120,6 +120,7 @@ const
     "char",
     "string",
     "seq",
+    "cint",
     "cstring",
     "int8",
     "int16",

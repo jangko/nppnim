@@ -35,13 +35,13 @@ proc pluginInit(hModule: HMODULE) = discard
 # Here you can do the clean up, save the parameters (if any) for the next session
 proc pluginCleanUp() = discard
 
-#proc getSciHandle(): SciHandle =
-#  # Get the current scintilla
-#  var which = -1
-#  sendMessage(nppData.nppHandle, NPPM_GETCURRENTSCINTILLA, 0, cast[LPARAM](which.addr))
-#  if which == -1: return
-#  let curScintilla = if which == 0: nppData.sciMainHandle else: nppData.sciSecondHandle
-#  result = initSciHandle(curScintilla)
+proc getSciHandle(): SciHandle =
+  # Get the current scintilla
+  var which = -1
+  sendMessage(nppData.nppHandle, NPPM_GETCURRENTSCINTILLA, 0, cast[LPARAM](which.addr))
+  if which == -1: return
+  let curScintilla = if which == 0: nppData.sciMainHandle else: nppData.sciSecondHandle
+  result = initSciHandle(curScintilla)
 
 #proc hello() {.cdecl.} =
   #Open a new document
@@ -104,9 +104,11 @@ proc getFuncsArray(n: ptr int): ptr FuncItem {.cdecl, exportc, dynlib.} =
 proc beNotified(scn: ptr SCNotification) {.cdecl, exportc, dynlib.} =
   # this is a hacky whacky approach to bug #2: the lexer not being called
   # after the new file just saved
-  if scn.nmhdr.code == NPPN_FILESAVED:
-    sendMessage(nppData.nppHandle, NPPM_MENUCOMMAND, 0, IDM_EDIT_UNDO)
-    sendMessage(nppData.nppHandle, NPPM_MENUCOMMAND, 0, IDM_EDIT_REDO)
+  #if scn.nmhdr.code == NPPN_FILESAVED:
+  #  let sci = getSciHandle()
+  #  sci.addText(" ")
+  #  sendMessage(nppData.nppHandle, NPPM_MENUCOMMAND, 0, IDM_EDIT_UNDO)
+  discard  
 
 proc messageProc(Message: WINUINT, wParam: WPARAM, lParam: LPARAM): LRESULT {.cdecl, exportc, dynlib.} =
   result = TRUE
