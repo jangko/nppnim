@@ -33,6 +33,7 @@
             <WordsStyle name="Star" styleID="13" fgColor="FF0000" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="TripleString" styleID="14" fgColor="8B814C" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="RawString" styleID="15" fgColor="8B8878" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="CType" styleID="16" fgColor="FF80FF" bgColor="FFFFFF" fontName="" fontStyle="0" />
         </LexerType>
     </LexerStyles>
 </NotepadPlus>

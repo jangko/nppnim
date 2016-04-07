@@ -120,8 +120,6 @@ const
     "char",
     "string",
     "seq",
-    "cint",
-    "cstring",
     "int8",
     "int16",
     "int32",
@@ -149,6 +147,25 @@ const
     "varargs"
   ].toSet()
 
+  NimCTypes* = [
+    "csize",
+    "cfloat",
+    "cdouble",
+    "clong",
+    "culong",
+    "clonglong",
+    "culonglong",    
+    "cshort",
+    "cushort",
+    "cschar",
+    "cchar",
+    "cuchar",
+    "cint",
+    "cuint",
+    "cstring",
+    "cstringArray"
+  ].toSet()
+  
   NimMagic* = [
     "defined",
     "declared",
@@ -161,7 +178,7 @@ const
 
 type
   WordType* = enum
-    WT_KEYWORD, WT_TYPE, WT_IDENT, WT_MAGIC
+    WT_KEYWORD, WT_TYPE, WT_IDENT, WT_MAGIC, WT_CTYPE
 
   VTABLE* = array[0..25, pointer]
 

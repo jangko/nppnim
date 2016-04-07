@@ -107,6 +107,7 @@ proc GetWordType(L: ptr LexAccessor, start, stop: int): WordType =
     kw.add L[][i]
   if support.NimKeywords.contains(kw): return WT_KEYWORD
   if support.NimTypes.contains(kw): return WT_TYPE
+  if support.NimCTypes.contains(kw): return WT_CTYPE
   if support.NimMagic.contains(kw): return WT_MAGIC
   result = WT_IDENT
 
@@ -137,6 +138,8 @@ proc getSymbol(sc: var StyleContext) =
     sc.setState(NIM_KEYWORD)
   elif wt == WT_TYPE:
     sc.setState(NIM_TYPE)
+  elif wt == WT_CTYPE:
+    sc.setState(NIM_CTYPE)
   elif wt == WT_MAGIC:
     sc.setState(NIM_MAGIC)
   else:

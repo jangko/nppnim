@@ -133,6 +133,7 @@ const
   NIM_STAR = 13
   NIM_STRING_TRIPLE = 14
   NIM_RAW_STRING = 15
+  NIM_CTYPE = 16
 
 const
   numChars*: set[char] = {'0'..'9', 'a'..'z', 'A'..'Z'}
