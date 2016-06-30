@@ -334,7 +334,7 @@ proc GetLexerName(idx: int, name: pointer, nameLen: int) {.stdcall, exportc, dyn
   copyMem(name, str.cstring, len+1)
 
 proc GetLexerStatusText(idx: int, desc: ptr TCHAR, descLen: int) {.stdcall, exportc, dynlib.} =
-  copyToBuff("Nim Lang", desc, descLen)
+  copyToBuff("Nim Programming Language", desc, descLen)
 
 var lex: ILexer
 var vTable: VTABLE

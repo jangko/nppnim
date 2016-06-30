@@ -1,4 +1,5 @@
-nimPDF, PDF document generation library
+nppNim
+a notepad++ plugin contains syntax highlighter and code folding for Nim lang
 
 Copyright (c) 2015 Andri Lim
 
