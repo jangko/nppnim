@@ -8,11 +8,14 @@ This means this plugin also can serve as a model for anyone who want to write th
 compatible with recent notepad++ in any language that can produce a DLL.
 
 requirements(for notepad++ 32bit):
-  * Nim32
-  * MingW32
+  * Nim32/64bit
+  * MingW32 or VCC 32bit
   
 how to compile:
   * nim c -d:release nppnim
+  
+how to cross compile using 64bit Nim compiler:
+  * nim c -d:release --cpu:i386 nppnim
   
 how to test:
   * put nppnim.dll in NPPINSTDIR\plugins
