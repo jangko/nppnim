@@ -191,6 +191,13 @@ template DEFAULT_STATE_BODY: stmt =
   of '#':
     let state = if sc.chNext == '[': NIM_BLOCK_COMMENT else: NIM_LINE_COMMENT
     sc.setState(state)
+    sc.forward()
+    if sc.ch == '#' and sc.chNext == '[':
+      sc.changeState(NIM_DOC_BLOCK_COMMENT)
+      sc.forward(2)   # skip ']##
+    elif sc.ch == '#' and sc.chNext != '[':
+      sc.changeState(NIM_DOC_COMMENT)
+      sc.forward(1)
   of '*':
     sc.setState(NIM_STAR)
     sc.forward()

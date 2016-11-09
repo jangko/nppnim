@@ -108,7 +108,7 @@ proc beNotified(scn: ptr SCNotification) {.cdecl, exportc, dynlib.} =
   #  let sci = getSciHandle()
   #  sci.addText(" ")
   #  sendMessage(nppData.nppHandle, NPPM_MENUCOMMAND, 0, IDM_EDIT_UNDO)
-  discard  
+  discard
 
 proc messageProc(Message: WINUINT, wParam: WPARAM, lParam: LPARAM): LRESULT {.cdecl, exportc, dynlib.} =
   result = TRUE
@@ -134,6 +134,8 @@ const
   NIM_STRING_TRIPLE = 14
   NIM_RAW_STRING = 15
   NIM_CTYPE = 16
+  NIM_DOC_BLOCK_COMMENT = 17
+  NIM_DOC_COMMENT = 18
 
 const
   numChars*: set[char] = {'0'..'9', 'a'..'z', 'A'..'Z'}
@@ -162,7 +164,7 @@ proc Lex(x: pointer, startPos, docLen, initStyle: int, pAccess: IDocument) {.std
     case sc.state
     of NIM_DEFAULT:
       DEFAULT_STATE_BODY
-    of NIM_LINE_COMMENT:
+    of NIM_LINE_COMMENT, NIM_DOC_COMMENT:
       if (sc.ch == '\x0D') or (sc.ch == '\x0A'):
         sc.setState(NIM_DEFAULT)
     of NIM_BLOCK_COMMENT:
@@ -179,6 +181,11 @@ proc Lex(x: pointer, startPos, docLen, initStyle: int, pAccess: IDocument) {.std
       if sc.ch == '\\':
         sc.forward()
       elif sc.match "\"\"\"":
+        sc.forward()
+        sc.forward()
+        sc.forwardSetState(NIM_DEFAULT)
+    of NIM_DOC_BLOCK_COMMENT:
+      if sc.match "]##":
         sc.forward()
         sc.forward()
         sc.forwardSetState(NIM_DEFAULT)

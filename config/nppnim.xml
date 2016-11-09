@@ -23,7 +23,7 @@
             <WordsStyle name="Type" styleID="3" fgColor="FF0000" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Number" styleID="4" fgColor="559E83" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="String" styleID="5" fgColor="AE5A41" bgColor="FFFFFF" fontName="" fontStyle="0" />
-            <WordsStyle name="BlockComment" styleID="6" fgColor="C3CB710" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="BlockComment" styleID="6" fgColor="C3CB71" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Pragma" styleID="7" fgColor="008000" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Operator" styleID="8" fgColor="9999ff" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="Char" styleID="9" fgColor="FF00FF" bgColor="FFFFFF" fontName="" fontStyle="0" />
@@ -34,6 +34,8 @@
             <WordsStyle name="TripleString" styleID="14" fgColor="8B814C" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="RawString" styleID="15" fgColor="8B8878" bgColor="FFFFFF" fontName="" fontStyle="0" />
             <WordsStyle name="CType" styleID="16" fgColor="FF80FF" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="DocBlockComment" styleID="17" fgColor="C3CBFF" bgColor="FFFFFF" fontName="" fontStyle="0" />
+            <WordsStyle name="DocComment" styleID="18" fgColor="C3CB80" bgColor="FFFFFF" fontName="" fontStyle="0" />
         </LexerType>
     </LexerStyles>
 </NotepadPlus>

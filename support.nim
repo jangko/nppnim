@@ -41,6 +41,9 @@ const
   lvOriginal* = 0
   lvSubStyles* = 1
 
+# Nim ver 0.13.0 use const, but 0.15.0 regression
+# force me to use let
+let 
   NimKeywords* = ["addr",
     "and",
     "as",
