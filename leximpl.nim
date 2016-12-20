@@ -129,7 +129,7 @@ proc getSymbol(sc: var StyleContext) =
     of 'A'..'Z':
       inc(pos)
     of '_':
-      if sc.chNext notin SymChars: break
+      if styler[][pos+1] notin SymChars: break
       inc(pos)
     else: break
 
