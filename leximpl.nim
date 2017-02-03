@@ -171,7 +171,7 @@ proc getString(sc: var StyleContext, rawMode: bool) =
         sc.forward()
   sc.setState(NIM_DEFAULT)
 
-template DEFAULT_STATE_BODY: stmt =
+template DEFAULT_STATE_BODY: typed =
   case sc.ch
   of SymStartChars - {'r', 'R', 'l'}:
     sc.getSymbol()

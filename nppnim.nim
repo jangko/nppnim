@@ -177,6 +177,10 @@ proc Lex(x: pointer, startPos, docLen, initStyle: int, pAccess: IDocument) {.std
         sc.forward()
         sc.forward()
         sc.setState(NIM_DEFAULT)
+        continue
+      if sc.ch == '}':
+        sc.forward()
+        sc.setState(NIM_DEFAULT)
     of NIM_STRING_TRIPLE:
       if sc.ch == '\\':
         sc.forward()
