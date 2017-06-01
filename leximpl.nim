@@ -111,6 +111,10 @@ proc GetWordType(L: ptr LexAccessor, start, stop: int): WordType =
   if support.NimMagic.contains(kw): return WT_MAGIC
   result = WT_IDENT
 
+# this is Nim legacy
+const
+  magicIdentSeparatorRuneByteWidth = 3
+
 proc getSymbol(sc: var StyleContext) =
   var pos = sc.currentPos
   var styler = sc.styler
@@ -120,7 +124,9 @@ proc getSymbol(sc: var StyleContext) =
     of 'a'..'z', '0'..'9', '\x80'..'\xFF':
       if  c == '\226' and
           styler[][pos+1] == '\128' and
-          styler[][pos+2] == '\147':  # It's a 'magic separator' en-dash Unicode
+          styler[][pos+2] == '\147':
+          # It's a 'magic separator' en-dash Unicode,
+          # not supported anymore since Nim 0.17.0
         if styler[][pos + magicIdentSeparatorRuneByteWidth] notin SymChars:
           break
         inc(pos, magicIdentSeparatorRuneByteWidth)
@@ -169,7 +175,7 @@ proc getString(sc: var StyleContext, rawMode: bool) =
         sc.getEscapedChar()
       else:
         sc.forward()
-  sc.setState(NIM_DEFAULT)
+  discard sc.popState()
 
 template DEFAULT_STATE_BODY: typed =
   case sc.ch
@@ -210,7 +216,7 @@ template DEFAULT_STATE_BODY: typed =
     sc.getNumber()
     continue
   of '{':
-    if sc.chNext == '.': sc.setState(NIM_PRAGMA)
+    if sc.chNext == '.': sc.pushState(NIM_PRAGMA)
     else:
       sc.setState(NIM_BRACES)
       sc.forward()
@@ -219,7 +225,7 @@ template DEFAULT_STATE_BODY: typed =
   of '\"':
     # check for extended raw string literal:
     let rawMode = sc.currentPos > 0 and sc.chPrev in SymChars
-    sc.setState(NIM_STRING)
+    sc.pushState(NIM_STRING)
     sc.getString(rawMode)
     continue
   of {'[', '(', '}', ']', ')'}:

@@ -6,7 +6,7 @@
 #-----------------------------------------
 import
   winapi, scintilla, nppmsg, menucmdid, support,
-  lexaccessor, stylecontext, sets, etcpriv, utils, strutils
+  lexaccessor, stylecontext, sets, utils, strutils
 
 {.link: "resource/resource.o".}
 
@@ -65,12 +65,18 @@ proc commandMenuCleanUp() =
   discard
 
 # this is needed to initialize GC, global variable initialization, etc
-proc NimMain() {.cdecl, importc.}
-
+when defined(vcc):
+  {.emit: "N_LIB_EXPORT N_CDECL(void, NimMain)(void);".}
+else:
+  proc NimMain() {.cdecl, importc.}
+  
 proc DllMain(hModule: HANDLE, reasonForCall: DWORD, lpReserved: LPVOID): WINBOOL {.stdcall, exportc, dynlib.} =
   case reasonForCall
   of DLL_PROCESS_ATTACH:
-    NimMain()
+    when defined(vcc):
+      {.emit: "NimMain();".}
+    else:
+      NimMain()
     pluginInit(hModule)
   of DLL_PROCESS_DETACH:
     commandMenuCleanUp()
@@ -176,18 +182,24 @@ proc Lex(x: pointer, startPos, docLen, initStyle: int, pAccess: IDocument) {.std
       if sc.ch == '.' and sc.chNext == '}':
         sc.forward()
         sc.forward()
-        sc.setState(NIM_DEFAULT)
+        discard sc.popState()
         continue
       if sc.ch == '}':
         sc.forward()
-        sc.setState(NIM_DEFAULT)
+        discard sc.popState()
+      if sc.ch == '\"':
+        # check for extended raw string literal:
+        let rawMode = sc.currentPos > 0 and sc.chPrev in SymChars
+        sc.pushState(NIM_STRING)
+        sc.getString(rawMode)
+        continue
     of NIM_STRING_TRIPLE:
       if sc.ch == '\\':
         sc.forward()
       elif sc.match "\"\"\"":
         sc.forward()
         sc.forward()
-        sc.forwardSetState(NIM_DEFAULT)
+        discard sc.popForwardState()
     of NIM_DOC_BLOCK_COMMENT:
       if sc.match "]##":
         sc.forward()

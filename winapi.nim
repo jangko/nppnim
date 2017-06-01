@@ -977,7 +977,7 @@ proc RegisterClassA*(lpWndClass: LPWNDCLASSA): ATOM {.stdcall, dynlib: "user32",
 proc RegisterClassW*(lpWndClass: LPWNDCLASSW): ATOM {.stdcall, dynlib: "user32",
     importc: "RegisterClassW".}
 
-template registerClass*(wndClass: expr): ATOM =
+template registerClass*(wndClass: typed): ATOM =
   when defined(winUnicode): RegisterClassW(addr(wndClass))
   else: RegisterClassA(addr(wndClass))
 
@@ -1001,20 +1001,20 @@ proc GetMessageA(lpMsg: LPMSG, wnd: HWND, wMsgFilterMin: WINUINT,
 proc GetMessageW(lpMsg: LPMSG, wnd: HWND, wMsgFilterMin: WINUINT,
                   wMsgFilterMax: WINUINT): WINBOOL {.stdcall, dynlib: "user32", importc: "GetMessageW".}
 
-template getMessage*(lpMsg: expr, wnd: HWND, wMsgFilterMin, wMsgFilterMax: WINUINT): expr =
+template getMessage*(lpMsg: typed, wnd: HWND, wMsgFilterMin, wMsgFilterMax: WINUINT): untyped =
   when defined(winUnicode): GetMessageW(addr(lpMsg), wnd, wMsgFilterMin, wMsgFilterMax) != 0
   else: GetMessageA(addr(lpMsg), wnd, wMsgFilterMin, wMsgFilterMax) != 0
 
 proc TranslateMessage(lpMsg: LPMSG): WINBOOL {.stdcall, dynlib: "user32",
     importc: "TranslateMessage", discardable.}
 
-template translateMessage*(lpMsg: expr): expr =
+template translateMessage*(lpMsg: typed): untyped =
   TranslateMessage(addr(lpMsg))
 
 proc DispatchMessageA(lpMsg: LPMSG): int32 {.stdcall, dynlib: "user32", importc: "DispatchMessageA", discardable.}
 proc DispatchMessageW(lpMsg: LPMSG): int32 {.stdcall, dynlib: "user32", importc: "DispatchMessageW", discardable.}
 
-template dispatchMessage*(lpMsg: expr): expr =
+template dispatchMessage*(lpMsg: typed): untyped =
   when defined(winUnicode): DispatchMessageW(addr(lpMsg))
   else: DispatchMessageA(addr(lpMsg))
 

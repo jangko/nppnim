@@ -6,6 +6,8 @@
 #-----------------------------------------
 import lexaccessor, scintilla
 
+const maxState = 10
+
 type
   StyleContext* = object
     styler*: ptr LexAccessor
@@ -23,13 +25,17 @@ type
     lineStartNext: int
     atLineStart: bool
     atLineEnd: bool
-    state*: int
+    state*: int    
     chPrev*: char
     ch*: char
     width: int
     chNext*: char
     widthNext: int
-
+    
+    # stateStack were added to cope with string/triple string in pragma
+    statePos: int
+    stateStack: array[0..maxState, int]
+    
 proc makeLowerCase(ch: char): char =
   if (ch < 'A') or (ch > 'Z'): return ch
   else: result = (ch.ord - 'A'.ord + 'a'.ord).chr
@@ -77,6 +83,8 @@ proc initStyleContext*(startPos, length, initStyle: int, styler: ptr LexAccessor
   result.ch = result.chNext
   result.width = result.widthNext
   result.getNextChar()
+  
+  result.statePos = 0
 
 proc complete*(ctx: StyleContext) =
   let x = if ctx.currentPos > ctx.lengthDocument: 2 else: 1
@@ -126,6 +134,24 @@ proc forwardSetState*(ctx: var StyleContext, state: int) =
   ctx.styler[].colourTo(ctx.currentPos - x, ctx.state)
   ctx.state = state
 
+proc pushState*(ctx: var StyleContext, state: int) =
+  if ctx.statePos < maxState:
+    ctx.stateStack[ctx.statePos] = ctx.state
+    inc ctx.statePos    
+  ctx.setState(state)
+  
+proc popState*(ctx: var StyleContext): int =
+  if ctx.statePos > 0:
+    result = ctx.stateStack[ctx.statePos - 1]
+    dec ctx.statePos
+  ctx.setState(result)
+
+proc popForwardState*(ctx: var StyleContext): int =
+  if ctx.statePos > 0:
+    result = ctx.stateStack[ctx.statePos - 1]
+    dec ctx.statePos
+  ctx.forwardSetState(result)
+  
 proc lengthCurrent*(ctx: StyleContext): int =
   result = ctx.currentPos - ctx.styler[].getStartSegment()
 
