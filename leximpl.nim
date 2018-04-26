@@ -103,7 +103,7 @@ proc getNumber(sc: var StyleContext) =
 var kw = newStringOfCap(50)
 proc GetWordType(L: ptr LexAccessor, start, stop: int): WordType =
   kw.setLen(0)
-  for i in start.. <stop:
+  for i in start..<stop:
     kw.add L[][i]
   if support.NimKeywords.contains(kw): return WT_KEYWORD
   if support.NimTypes.contains(kw): return WT_TYPE

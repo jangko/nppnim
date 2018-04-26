@@ -8,7 +8,10 @@ import
   winapi, scintilla, nppmsg, menucmdid, support,
   lexaccessor, stylecontext, sets, utils, strutils
 
-{.link: "resource/resource.o".}
+when defined(cpu64):
+  {.link: "resource/resource64.o".}
+else:
+  {.link: "resource/resource32.o".}
 
 const
   nbFunc = 1
@@ -69,7 +72,7 @@ when defined(vcc):
   {.emit: "N_LIB_EXPORT N_CDECL(void, NimMain)(void);".}
 else:
   proc NimMain() {.cdecl, importc.}
-  
+
 proc DllMain(hModule: HANDLE, reasonForCall: DWORD, lpReserved: LPVOID): WINBOOL {.stdcall, exportc, dynlib.} =
   case reasonForCall
   of DLL_PROCESS_ATTACH:
@@ -215,7 +218,7 @@ proc IsCommentLine(L: var LexAccessor, line: int): bool =
   let pos = L.lineStart(line)
   let eol_pos = L.lineStart(line + 1) - 1
 
-  for i in pos.. <eol_pos:
+  for i in pos..<eol_pos:
     let ch = L[i]
     if ch == '#': return true
     elif (ch != ' ') and (ch != '\t'): return false

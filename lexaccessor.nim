@@ -66,7 +66,7 @@ proc fill*(L: var LexAccessor, pos: int) =
   if L.startPos < 0: L.startPos = 0
   L.endPos = L.startPos + bufferSize
   if L.endPos > L.lenDoc: L.endPos = L.lenDoc
-  L.pAccess.nvGetCharRange(L.buf, L.startPos, L.endPos - L.startPos)
+  L.pAccess.nvGetCharRange(cast[cstring](L.buf[0].addr), L.startPos, L.endPos - L.startPos)
   L.buf[L.endPos - L.startPos] = chr(0)
 
 proc `[]`*(L: var LexAccessor, pos: int): char =
@@ -120,7 +120,7 @@ proc length*(L: LexAccessor): int =
 
 proc flush*(L: var LexAccessor) =
   if L.validLen > 0:
-    discard L.pAccess.nvSetStyles(L.validLen, L.styleBuf)
+    discard L.pAccess.nvSetStyles(L.validLen, cast[cstring](L.styleBuf[0].addr))
     inc(L.startPosStyling, L.validLen)
     L.validLen = 0
 

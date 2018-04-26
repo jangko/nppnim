@@ -1140,8 +1140,8 @@ type
     ch: char
 
 # Text retrieval and modification
-proc scisend*(sci: SciHandle; iMessage: int; wParam = 0; lParam: sptr_t = 0): sptr_t {.discardable.} =
-  result = sci.send(sci.hnd, iMessage.cuint, wParam.uptr_t, lParam)
+proc scisend*(sci: SciHandle; iMessage: int; wParam = 0; lParam: sptr_t = 0): int {.discardable.} =
+  result = sci.send(sci.hnd, iMessage.cuint, wParam.uptr_t, lParam).int
 
 proc getText*(sci: SciHandle; length: int): string =
   result = newString(length)
@@ -1357,10 +1357,10 @@ proc moveCaretInsideView*(sci: SciHandle) =
   sci.scisend(SCI_MOVECARETINSIDEVIEW)
 
 proc wordStartPosition*(sci: SciHandle; pos: int, onlyWordCharacters: bool): int =
-  result = sci.scisend(SCI_WORDSTARTPOSITION, pos, ord(onlyWordCharacters))
+  result = sci.scisend(SCI_WORDSTARTPOSITION, pos, cast[sptr_t](onlyWordCharacters))
 
 proc wordEndPosition*(sci: SciHandle; pos: int, onlyWordCharacters: bool): int =
-  result = sci.scisend(SCI_WORDENDPOSITION, pos, ord(onlyWordCharacters))
+  result = sci.scisend(SCI_WORDENDPOSITION, pos, cast[sptr_t](onlyWordCharacters))
 
 proc positionBefore*(sci: SciHandle; pos: int): int =
   result = sci.scisend(SCI_POSITIONBEFORE, pos)
