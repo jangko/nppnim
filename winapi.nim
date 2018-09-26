@@ -879,7 +879,7 @@ proc MAKEWORD*(a, b: int32): int16 =
 
 when defined(winUniCode):
   proc WC*(s: string): LPCWSTR =
-    if s == nil: return cast[LPCWSTR](0)
+    if s.len == 0: return cast[LPCWSTR](0)
     let x = newWideCString(s)
     result = cast[LPCWSTR](x)
 else:
