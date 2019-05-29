@@ -54,7 +54,7 @@ proc getSciHandle(): SciHandle =
   #sci.addText("Hello, Notepad++!")
 
 proc helloDlg() {.cdecl.} =
-  discard messageBox(NULL, "Copyright(c) 2016, Andri Lim\nhttps://github.com/jangko/nppnim", "About", MB_OK)
+  discard messageBox(NULL, "Copyright(c) 2016-2019, Andri Lim\nhttps://github.com/jangko/nppnim", "About", MB_OK)
 
 # Initialization of your plugin commands
 # You should fill your plugins commands here
@@ -98,7 +98,7 @@ proc setInfo(nd: NppDataCopy) {.cdecl, exportc, dynlib.} =
   commandMenuInit()
 
 let
-  pluginName = WC("Nim Lexer")
+  pluginName = WC("Npp Nim")
 
 proc getName(): ptr TCHAR {.cdecl, exportc, dynlib.} =
   when defined(winUnicode):
@@ -146,6 +146,49 @@ const
   NIM_DOC_BLOCK_COMMENT = 17
   NIM_DOC_COMMENT = 18
 
+let emptyString = "\0"
+let lcName = [
+  "NIM_DEFAULT\0",
+  "NIM_KEYWORD\0",
+  "NIM_LINE_COMMENT\0",
+  "NIM_TYPE\0",
+  "NIM_NUMBER\0",
+  "NIM_STRING\0",
+  "NIM_BLOCK_COMMENT\0",
+  "NIM_PRAGMA\0",
+  "NIM_OPERATOR\0",
+  "NIM_CHAR\0",
+  "NIM_IDENT\0",
+  "NIM_MAGIC\0",
+  "NIM_BRACES\0",
+  "NIM_STAR\0",
+  "NIM_STRING_TRIPLE\0",
+  "NIM_RAW_STRING\0",
+  "NIM_CTYPE\0",
+  "NIM_DOC_BLOCK_COMMENT\0",
+  "NIM_DOC_COMMENT\0"]
+
+let lcTag = [
+  "default\0",
+  "KEYWORD\0",
+  "lineComment\0",
+  "type\0",
+  "number\0",
+  "string\0",
+  "blockComment\0",
+  "pragma\0",
+  "operator\0",
+  "char\0",
+  "identifier\0",
+  "magic\0",
+  "braces\0",
+  "exportMarker\0",
+  "string\0",
+  "rawString\0",
+  "ctype\0",
+  "docBlockComment\0",
+  "docComment\0"]
+
 const
   numChars*: set[char] = {'0'..'9', 'a'..'z', 'A'..'Z'}
   SymChars*: set[char] = {'a'..'z', 'A'..'Z', '0'..'9', '\x80'..'\xFF'}
@@ -153,21 +196,29 @@ const
   OpChars*: set[char] = {'+', '-', '*', '/', '\\', '<', '>', '!', '?', '^', '.',
     '|', '=', '%', '&', '$', '@', '~', ':', '\x80'..'\xFF'}
 
-proc Version(x: pointer): int {.stdcall.} = lvOriginal
-proc Release(x: pointer) {.stdcall.} = discard
-proc PropertyNames(x: pointer): cstring {.stdcall.} = nil
-proc PropertyType(x: pointer, name: cstring): int {.stdcall.} = -1
-proc DescribeProperty(x: pointer, name: cstring): cstring {.stdcall.} = nil
-proc PropertySet(x: pointer, key, val: cstring): int {.stdcall.} = -1
-proc DescribeWordListSets(x: pointer): cstring {.stdcall.} = nil
-proc WordListSet(x: pointer, n: int, wl: cstring): int {.stdcall.} = -1
+const
+  lexer_ver {.strdefine.} = "release4"
+
+proc Version(lex: Lexer): cint {.stdcall.} =
+  when lexer_ver == "original":
+    lvOriginal
+  else:
+    lvRelease4
+
+proc Release(lex: Lexer) {.stdcall.} = discard
+proc PropertyNames(lex: Lexer): cstring {.stdcall.} = nil
+proc PropertyType(lex: Lexer, name: cstring): cint {.stdcall.} = -1
+proc DescribeProperty(lex: Lexer, name: cstring): cstring {.stdcall.} = nil
+proc PropertySet(lex: Lexer, key, val: cstring): Sci_Position {.stdcall.} = -1
+proc DescribeWordListSets(lex: Lexer): cstring {.stdcall.} = nil
+proc WordListSet(lex: Lexer, n: cint, wl: cstring): int {.stdcall.} = -1
 
 include leximpl
 
-proc Lex(x: pointer, startPos, docLen, initStyle: int, pAccess: IDocument) {.stdcall.} =
+proc Lex(lex: Lexer, startPos: Sci_PositionU, docLen: Sci_Position, initStyle: cint, pAccess: IDocument) {.stdcall.} =
   var
     styler = initLexAccessor(pAccess)
-    sc = initStyleContext(startPos, docLen, initStyle, styler.addr)
+    sc = initStyleContext(startPos.int, docLen.int, initStyle.int, styler.addr)
 
   while sc.more():
     case sc.state
@@ -229,10 +280,10 @@ proc IsQuoteLine(L: LexAccessor, line: int): bool =
   result = style == NIM_STRING_TRIPLE
 
 #this algorithm is taken from scintilla python fold code
-proc Fold(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument) {.stdcall.} =
+proc Fold(lex: Lexer, startPos: Sci_PositionU, docLen: Sci_Position, initStyle: cint, pAccess: IDocument) {.stdcall.} =
   var styler = initLexAccessor(pAccess)
 
-  let maxPos = startPos + docLen
+  let maxPos = startPos.int + docLen.int
   let maxLines = if maxPos == styler.length(): styler.getLine(maxPos) else: styler.getLine(maxPos - 1) #Requested last line
   let docLines = styler.getLine(styler.length()) # Available last line
 
@@ -242,7 +293,7 @@ proc Fold(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument)
   # at least one line in all cases)
   var
     spaceFlags: WSTypes
-    lineCurrent = styler.getLine(startPos)
+    lineCurrent = styler.getLine(startPos.int)
     indentCurrent = styler.indentAmount(lineCurrent, spaceFlags)
 
   while lineCurrent > 0:
@@ -350,7 +401,61 @@ proc Fold(x: pointer, startPos, docLen: int, initStyle: int, pAccess: IDocument)
   # header flag set; the loop above is crafted to take care of this case!
   # styler.setLevel(lineCurrent, indentCurrent)
 
-proc PrivateCall(x: pointer, operation: int, ud: pointer): pointer {.stdcall.} = nil
+proc PrivateCall(lex: Lexer, operation: cint, ud: pointer): pointer {.stdcall.} = nil
+
+# ILexer4
+proc LineEndTypesSupported(lex: Lexer): cint {.stdcall.} =
+  SC_LINE_END_TYPE_DEFAULT
+
+proc AllocateSubStyles(lex: Lexer, styleBase, numberStyles: cint): cint {.stdcall.} =
+  -1.cint
+
+proc SubStylesStart(lex: Lexer, styleBase: cint): cint {.stdcall.} =
+  -1.cint
+
+proc SubStylesLength(lex: Lexer, styleBase: cint): cint {.stdcall.} =
+  0.cint
+
+proc StyleFromSubStyle(lex: Lexer, subStyle: cint): cint {.stdcall.} =
+  subStyle.cint
+
+proc PrimaryStyleFromStyle(lex: Lexer, style: cint): cint {.stdcall.} =
+  style.cint
+
+proc FreeSubStyles(lex: Lexer) {.stdcall.} =
+  discard
+
+proc SetIdentifiers(lex: Lexer, style: cint, identifiers: cstring) {.stdcall.} =
+  discard
+
+proc DistanceToSecondaryStyles(lex: Lexer): cint {.stdcall.} =
+  0
+
+proc GetSubStyleBases(lex: Lexer): cstring {.stdcall.} =
+  var styleSubable = [0.char]
+  styleSubable[0].addr
+
+proc NamedStyles(lex: Lexer): cint {.stdcall.} =
+  lcName.len.cint
+
+proc NameOfStyle(lex: Lexer, style: cint): cstring {.stdcall.} =
+  if style < lex.NamedStyles():
+    lcName[style.int][0].unsafeAddr
+  else:
+    emptyString[0].unsafeAddr
+
+proc TagsOfStyle(lex: Lexer, style: cint): cstring {.stdcall.} =
+  if style < lex.NamedStyles():
+    lcTag[style.int][0].unsafeAddr
+  else:
+    emptyString[0].unsafeAddr
+
+proc DescriptionOfStyle(lex: Lexer, style: cint): cstring {.stdcall.} =
+  # TODO: use descriptive style instead of identifier
+  if style < lex.NamedStyles():
+    lcName[style.int][0].unsafeAddr
+  else:
+    emptyString[0].unsafeAddr
 
 proc GetLexerCount(): int {.stdcall, exportc, dynlib.} = 1
 
@@ -377,6 +482,23 @@ proc lexFactory(): ptr ILexer {.stdcall.} =
   vTable[8] = Lex
   vTable[9] = Fold
   vTable[10] = PrivateCall
+
+  # ILexer4
+  vTable[11] = LineEndTypesSupported
+  vTable[12] = AllocateSubStyles
+  vTable[13] = SubStylesStart
+  vTable[14] = SubStylesLength
+  vTable[15] = StyleFromSubStyle
+  vTable[16] = PrimaryStyleFromStyle
+  vTable[17] = FreeSubStyles
+  vTable[18] = SetIdentifiers
+  vTable[19] = DistanceToSecondaryStyles
+  vTable[20] = GetSubStyleBases
+  vTable[21] = NamedStyles
+  vTable[22] = NameOfStyle
+  vTable[23] = TagsOfStyle
+  vTable[24] = DescriptionOfStyle
+
   lex.vTable = vTable.addr
   result = lex.addr
 

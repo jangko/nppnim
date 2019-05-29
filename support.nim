@@ -4,7 +4,7 @@
 # (See accompanying file LICENSE.txt)
 #
 #-----------------------------------------
-import sets, winapi
+import sets, winapi, scintilla
 
 const
   nbChar = 64
@@ -40,10 +40,11 @@ const
   #ILexer version
   lvOriginal* = 0
   lvSubStyles* = 1
+  lvRelease4* = 2
 
 # Nim ver 0.13.0 use const, but 0.15.0 regression
 # force me to use let
-let 
+let
   NimKeywords* = ["addr",
     "and",
     "as",
@@ -157,7 +158,7 @@ let
     "clong",
     "culong",
     "clonglong",
-    "culonglong",    
+    "culonglong",
     "cshort",
     "cushort",
     "cschar",
@@ -168,7 +169,7 @@ let
     "cstring",
     "cstringArray"
   ].toSet()
-  
+
   NimMagic* = [
     "defined",
     "declared",
@@ -194,79 +195,81 @@ type
   ILexer* {.pure, final.} = object
     vTable*: ptr VTABLE
 
+  Lexer* = ptr ILexer
+
   LexerFactoryProc* = proc(): ptr ILexer {.stdcall.}
 
 proc nvVersion*(dv: IDocument): int =
-  type dvt = proc(x: IDocument): int {.stdcall.}
+  type dvt = proc(x: IDocument): cint {.stdcall.}
   result = cast[dvt](dv.vTable[0])(dv)
 
 proc nvSetErrorStatus*(dv: IDocument, status: int) =
-  type dvt = proc(x: IDocument, status: int) {.stdcall.}
-  cast[dvt](dv.vTable[1])(dv, status)
+  type dvt = proc(x: IDocument, status: cint) {.stdcall.}
+  cast[dvt](dv.vTable[1])(dv, status.cint)
 
 proc nvLength*(dv: IDocument): int =
-  type dvt = proc(x: IDocument): int {.stdcall.}
+  type dvt = proc(x: IDocument): Sci_Position {.stdcall.}
   result = cast[dvt](dv.vTable[2])(dv)
 
 proc nvGetCharRange*(dv: IDocument, buf: cstring, pos, len: int) =
-  type dvt = proc(x: IDocument, buf: cstring, pos, len: int) {.stdcall.}
-  cast[dvt](dv.vTable[3])(dv, buf, pos, len)
+  type dvt = proc(x: IDocument, buf: cstring, pos, len: Sci_Position) {.stdcall.}
+  cast[dvt](dv.vTable[3])(dv, buf, pos.Sci_Position, len.Sci_Position)
 
 proc nvStyleAt*(dv: IDocument, pos: int): char =
-  type dvt = proc(x: IDocument, pos: int): char {.stdcall.}
-  result = cast[dvt](dv.vTable[4])(dv, pos)
+  type dvt = proc(x: IDocument, pos: Sci_Position): char {.stdcall.}
+  result = cast[dvt](dv.vTable[4])(dv, pos.Sci_Position)
 
 proc nvLineFromPosition*(dv: IDocument, pos: int): int =
-  type dvt = proc(x: IDocument, pos: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[5])(dv, pos)
+  type dvt = proc(x: IDocument, pos: Sci_Position): Sci_Position {.stdcall.}
+  result = cast[dvt](dv.vTable[5])(dv, pos.Sci_Position).int
 
 proc nvLineStart*(dv: IDocument, line: int): int =
-  type dvt = proc(x: IDocument, line: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[6])(dv, line)
+  type dvt = proc(x: IDocument, line: Sci_Position): Sci_Position {.stdcall.}
+  result = cast[dvt](dv.vTable[6])(dv, line.Sci_Position).int
 
 proc nvGetLevel*(dv: IDocument, line: int): int =
-  type dvt = proc(x: IDocument, line: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[7])(dv, line)
+  type dvt = proc(x: IDocument, line: Sci_Position): cint {.stdcall.}
+  result = cast[dvt](dv.vTable[7])(dv, line.Sci_Position).int
 
 proc nvSetLevel*(dv: IDocument, line, level: int): int =
-  type dvt = proc(x: IDocument, line, level: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[8])(dv, line, level)
+  type dvt = proc(x: IDocument, line: Sci_Position, level: cint): cint {.stdcall.}
+  result = cast[dvt](dv.vTable[8])(dv, line.Sci_Position, level.cint).int
 
 proc nvGetLineState*(dv: IDocument, line: int): int =
-  type dvt = proc(x: IDocument, line: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[9])(dv, line)
+  type dvt = proc(x: IDocument, line: Sci_Position): cint {.stdcall.}
+  result = cast[dvt](dv.vTable[9])(dv, line.Sci_Position).int
 
 proc nvSetLineState*(dv: IDocument, line: int, state: int): int =
-  type dvt = proc(x: IDocument, line, state: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[10])(dv, line, state)
+  type dvt = proc(x: IDocument, line: Sci_Position, state: cint): cint {.stdcall.}
+  result = cast[dvt](dv.vTable[10])(dv, line.Sci_Position, state.cint).int
 
-proc nvStartStyling*(dv: IDocument, pos: int, mask: char) =
-  type dvt = proc(x: IDocument, pos: int, mask: char) {.stdcall.}
-  cast[dvt](dv.vTable[11])(dv, pos, mask)
+proc nvStartStyling*(dv: IDocument, pos: int) =
+  type dvt = proc(x: IDocument, pos: Sci_Position) {.stdcall.}
+  cast[dvt](dv.vTable[11])(dv, pos.Sci_Position)
 
 proc nvSetStyleFor*(dv: IDocument, len: int, style: char): bool =
-  type dvt = proc(x: IDocument, len: int, style: char): bool {.stdcall.}
-  result = cast[dvt](dv.vTable[12])(dv, len, style)
+  type dvt = proc(x: IDocument, len: Sci_Position, style: char): bool {.stdcall.}
+  result = cast[dvt](dv.vTable[12])(dv, len.Sci_Position, style)
 
 proc nvSetStyles*(dv: IDocument, len: int, styles: cstring): bool =
-  type dvt = proc(x: IDocument, len: int, styles: cstring): bool {.stdcall.}
-  result = cast[dvt](dv.vTable[13])(dv, len, styles)
+  type dvt = proc(x: IDocument, len: Sci_Position, styles: cstring): bool {.stdcall.}
+  result = cast[dvt](dv.vTable[13])(dv, len.Sci_Position, styles)
 
 proc nvDecorationSetCurrentIndicator*(dv: IDocument, indicator: int) =
-  type dvt = proc(x: IDocument, indicator: int) {.stdcall.}
-  cast[dvt](dv.vTable[14])(dv, indicator)
+  type dvt = proc(x: IDocument, indicator: cint) {.stdcall.}
+  cast[dvt](dv.vTable[14])(dv, indicator.cint)
 
 proc nvDecorationFillRange*(dv: IDocument, pos, value, fillLength: int) =
-  type dvt = proc(x: IDocument, pos, value, fillLength: int) {.stdcall.}
-  cast[dvt](dv.vTable[15])(dv, pos, value, fillLength)
+  type dvt = proc(x: IDocument, pos: Sci_Position, value: cint, fillLength: Sci_Position) {.stdcall.}
+  cast[dvt](dv.vTable[15])(dv, pos.Sci_Position, value.cint, fillLength.Sci_Position)
 
 proc nvChangeLexerState*(dv: IDocument, start, stop: int) =
-  type dvt = proc(x: IDocument, start, stop: int) {.stdcall.}
-  cast[dvt](dv.vTable[16])(dv, start, stop)
+  type dvt = proc(x: IDocument, start, stop: Sci_Position) {.stdcall.}
+  cast[dvt](dv.vTable[16])(dv, start.Sci_Position, stop.Sci_Position)
 
 proc nvCodePage*(dv: IDocument): int =
-  type dvt = proc(x: IDocument): int {.stdcall.}
-  result = cast[dvt](dv.vTable[17])(dv)
+  type dvt = proc(x: IDocument): cint {.stdcall.}
+  result = cast[dvt](dv.vTable[17])(dv).int
 
 proc nvIsDBCSLeadByte*(dv: IDocument, ch: char): bool =
   type dvt = proc(x: IDocument, ch: char): bool {.stdcall.}
@@ -277,17 +280,17 @@ proc nvBufferPointer*(dv: IDocument): cstring =
   result = cast[dvt](dv.vTable[19])(dv)
 
 proc nvGetLineIndentation*(dv: IDocument, line: int): int =
-  type dvt = proc(x: IDocument, line: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[20])(dv, line)
+  type dvt = proc(x: IDocument, line: Sci_Position): cint {.stdcall.}
+  result = cast[dvt](dv.vTable[20])(dv, line.Sci_Position)
 
 proc nvLineEnd*(dv: IDocumentWithLineEnd, line: int): int =
-  type dvt = proc(x: IDocumentWithLineEnd, line: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[21])(dv, line)
+  type dvt = proc(x: IDocumentWithLineEnd, line: Sci_Position): Sci_Position {.stdcall.}
+  result = cast[dvt](dv.vTable[21])(dv, line.Sci_Position)
 
 proc nvGetRelativePosition*(dv: IDocumentWithLineEnd, pos, characterOffset: int): int =
-  type dvt = proc(x: IDocumentWithLineEnd, pos, characterOffset: int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[22])(dv, pos, characterOffset)
+  type dvt = proc(x: IDocumentWithLineEnd, pos, characterOffset: Sci_Position): Sci_Position {.stdcall.}
+  result = cast[dvt](dv.vTable[22])(dv, pos.Sci_Position, characterOffset.Sci_Position)
 
-proc nvGetCharacterAndWidth*(dv: IDocumentWithLineEnd, pos: int, pWidth: var int): int =
-  type dvt = proc(x: IDocumentWithLineEnd, pos: int, pWidth: var int): int {.stdcall.}
-  result = cast[dvt](dv.vTable[23])(dv, pos, pWidth)
+proc nvGetCharacterAndWidth*(dv: IDocumentWithLineEnd, pos: int, pWidth: var Sci_Position): int =
+  type dvt = proc(x: IDocumentWithLineEnd, pos: Sci_Position, pWidth: var Sci_Position): cint {.stdcall.}
+  result = cast[dvt](dv.vTable[23])(dv, pos.Sci_Position, pWidth)

@@ -14,28 +14,23 @@ type
     endPos: int
     lengthDocument: int
 
-    #Used for optimizing GetRelativeCharacter
-    posRelative: int
-    currentPosLastRelative: int
-    offsetRelative: int
-
     currentPos*: int
     currentLine: int
     lineDocEnd: int
     lineStartNext: int
     atLineStart: bool
     atLineEnd: bool
-    state*: int    
+    state*: int
     chPrev*: char
     ch*: char
     width: int
     chNext*: char
     widthNext: int
-    
+
     # stateStack were added to cope with string/triple string in pragma
     statePos: int
     stateStack: array[0..maxState, int]
-    
+
 proc makeLowerCase(ch: char): char =
   if (ch < 'A') or (ch > 'Z'): return ch
   else: result = (ch.ord - 'A'.ord + 'a'.ord).chr
@@ -54,9 +49,6 @@ proc getNextChar*(ctx: var StyleContext) =
 proc initStyleContext*(startPos, length, initStyle: int, styler: ptr LexAccessor, chMask = '\xFF'): StyleContext =
   result.styler = styler
   result.endPos = startPos + length
-  result.posRelative = 0
-  result.currentPosLastRelative = 0x7FFFFFFF
-  result.offsetRelative = 0
   result.currentPos = startPos
   result.currentLine = -1
   result.lineStartNext = -1
@@ -83,7 +75,7 @@ proc initStyleContext*(startPos, length, initStyle: int, styler: ptr LexAccessor
   result.ch = result.chNext
   result.width = result.widthNext
   result.getNextChar()
-  
+
   result.statePos = 0
 
 proc complete*(ctx: StyleContext) =
@@ -137,9 +129,9 @@ proc forwardSetState*(ctx: var StyleContext, state: int) =
 proc pushState*(ctx: var StyleContext, state: int) =
   if ctx.statePos < maxState:
     ctx.stateStack[ctx.statePos] = ctx.state
-    inc ctx.statePos    
+    inc ctx.statePos
   ctx.setState(state)
-  
+
 proc popState*(ctx: var StyleContext): int =
   if ctx.statePos > 0:
     result = ctx.stateStack[ctx.statePos - 1]
@@ -151,7 +143,7 @@ proc popForwardState*(ctx: var StyleContext): int =
     result = ctx.stateStack[ctx.statePos - 1]
     dec ctx.statePos
   ctx.forwardSetState(result)
-  
+
 proc lengthCurrent*(ctx: StyleContext): int =
   result = ctx.currentPos - ctx.styler[].getStartSegment()
 

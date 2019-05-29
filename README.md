@@ -24,7 +24,7 @@ how to test(version below 7.6):
   * put nppnim.xml in NPPINSTDIR\plugins\config
 
 how to test(version >= 7.6):
-  * put nppnim.dll in NPPINSTDIR\plugins\nppnim32
+  * put nppnim.dll in NPPINSTDIR\plugins\nppnim
   * put nppnim.xml in NPPINSTDIR\plugins\config
   
 beware:

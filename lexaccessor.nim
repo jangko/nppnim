@@ -16,9 +16,6 @@ const
   slopSize = bufferSize div 8
 
 type
-  EncodingType* = enum
-    enc8bit, encUnicode, encDBCS
-
   WSType* = enum
     wsSpace, wsTab, wsSpaceTab, wsInconsistent
 
@@ -29,8 +26,6 @@ type
     buf: array[0..bufferSize, char]
     startPos: int
     endPos: int
-    codePage: int
-    encodingType: EncodingType
     lenDoc: int
     styleBuf: array[0..bufferSize, char]
     validLen: int
@@ -42,8 +37,6 @@ proc initLexAccessor*(pAccess: IDocument): LexAccessor =
   result.pAccess = pAccess
   result.startPos = extremePosition
   result.endPos = 0
-  result.codePage = pAccess.nvCodePage()
-  result.encodingType = enc8bit
   result.lenDoc = pAccess.nvLength()
   result.validLen = 0
   result.startSeg = 0
@@ -51,12 +44,6 @@ proc initLexAccessor*(pAccess: IDocument): LexAccessor =
   result.documentVersion = pAccess.nvVersion()
   result.buf[0] = chr(0)
   result.styleBuf[0] = chr(0)
-
-  case result.codePage
-  of 65001: result.encodingType = encUnicode
-  of 932, 936, 949, 950, 1361:
-    result.encodingType = encDBCS
-  else: result.encodingType = enc8bit
 
 proc fill*(L: var LexAccessor, pos: int) =
   L.startPos = pos - slopSize
@@ -80,9 +67,6 @@ proc safeGetCharAt*(L: var LexAccessor, pos: int, chDefault = chr(0)): char =
     # Position is outside range of document
     return chDefault
   result = L.buf[pos - L.startPos]
-
-proc encoding*(L: LexAccessor): EncodingType =
-  result = L.encodingType
 
 proc match*(L: var LexAccessor, pos: int, s: cstring): bool =
   var i = 0
@@ -132,7 +116,7 @@ proc setLineState*(L: LexAccessor, line: int, state: int) =
 
 #Style setting
 proc startAt*(L: var LexAccessor, start: int) =
-  L.pAccess.nvStartStyling(start, '\xFF')
+  L.pAccess.nvStartStyling(start)
   L.startPosStyling = start
 
 proc getStartSegment*(L: LexAccessor): int =
