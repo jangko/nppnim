@@ -19,10 +19,14 @@ how to compile:
 how to cross compile using 64bit Nim compiler:
   * nim c -d:release --cpu:i386 --passL:-m32 --passC:-m32 nppnim
   
-how to test:
+how to test(version below 7.6):
   * put nppnim.dll in NPPINSTDIR\plugins
   * put nppnim.xml in NPPINSTDIR\plugins\config
 
+how to test(version >= 7.6):
+  * put nppnim.dll in NPPINSTDIR\plugins\nppnim32
+  * put nppnim.xml in NPPINSTDIR\plugins\config
+  
 beware:
   if there exist more than one npp plugin written in Nim, please use compiler switch "-d:useNimRtl", 
   (I never tested it before, but the documentation says like that)
