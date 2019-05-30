@@ -31,10 +31,6 @@ type
     statePos: int
     stateStack: array[0..maxState, int]
 
-proc makeLowerCase(ch: char): char =
-  if (ch < 'A') or (ch > 'Z'): return ch
-  else: result = (ch.ord - 'A'.ord + 'a'.ord).chr
-
 proc getNextChar*(ctx: var StyleContext) =
   ctx.chNext = safeGetCharAt(ctx.styler[], ctx.currentPos + ctx.width, chr(0))
   ctx.widthNext = 1
@@ -107,11 +103,6 @@ proc forward*(ctx: var StyleContext) =
 proc forward*(ctx: var StyleContext, nb: int) =
   for i in 0..nb-1: ctx.forward()
 
-proc forwardBytes*(ctx: var StyleContext, nb: int) =
-  let forwardPos = ctx.currentPos + nb
-  while forwardPos > ctx.currentPos:
-    ctx.forward()
-
 proc changeState*(ctx: var StyleContext, state: int) =
   ctx.state = state
 
@@ -144,17 +135,6 @@ proc popForwardState*(ctx: var StyleContext): int =
     dec ctx.statePos
   ctx.forwardSetState(result)
 
-proc lengthCurrent*(ctx: StyleContext): int =
-  result = ctx.currentPos - ctx.styler[].getStartSegment()
-
-proc getRelative*(ctx: StyleContext, n: int): char =
-  result = ctx.styler[].safeGetCharAt(ctx.currentPos + n, chr(0))
-
-proc getRelativeCharacter*(ctx: StyleContext, n: int): char =
-  if n == 0: return ctx.ch
-  #fast version for single byte encodings
-  result = ctx.styler[].safeGetCharAt(ctx.currentPos + n, chr(0))
-
 proc match*(ctx: StyleContext, ch0: char): bool =
   result = ctx.ch == ch0
 
@@ -174,36 +154,3 @@ proc match*(ctx: StyleContext, s: cstring): bool =
       return false
     inc i
   result = true
-
-proc matchIgnoreCase*(ctx: StyleContext, s: cstring): bool =
-  var i = 0
-  if makeLowerCase(ctx.ch) != s[i]: return false
-  inc i
-  if makeLowerCase(ctx.chNext) != s[i]: return false
-  inc i
-
-  while s[i].ord != 0:
-    if s[i] != makeLowerCase(ctx.styler[].safeGetCharAt(ctx.currentPos + i, chr(0))):
-      return false
-    inc i
-  result = true
-
-proc getRange(start, stop: int, styler: var LexAccessor, s: var cstring, len: int) =
-  var i = 0
-  while(i < stop - start + 1) and (i < len-1):
-    s[i] = styler[start + i]
-    inc i
-  s[i] = chr(0)
-
-proc getCurrent*(ctx: StyleContext, s: var cstring, len: int) =
-  getRange(ctx.styler[].getStartSegment(), ctx.currentPos - 1, ctx.styler[], s, len)
-
-proc getRangeLowered(start, stop: int, styler: var LexAccessor, s: var cstring, len: int) =
-  var i = 0
-  while (i < stop - start + 1) and (i < len-1):
-    s[i] = makeLowerCase(styler[start + i])
-    inc i
-  s[i] = chr(0)
-
-proc getCurrentLowered*(ctx: StyleContext, s: var cstring, len: int) =
-  getRangeLowered(ctx.styler[].getStartSegment(), ctx.currentPos - 1, ctx.styler[], s, len)
