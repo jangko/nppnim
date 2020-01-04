@@ -441,8 +441,8 @@ const
   WS_MINIMIZEBOX* = 0x00020000
   WS_OVERLAPPED* = 0
   WS_OVERLAPPEDWINDOW* = 0x00CF0000
-  WS_POPUP* = LONG(0x80000000)
-  WS_POPUPWINDOW* = LONG(0x80880000)
+  WS_POPUP* = cast[LONG](0x80000000)
+  WS_POPUPWINDOW* = cast[LONG](0x80880000)
   WS_SIZEBOX* = 0x00040000
   WS_SYSMENU* = 0x00080000
   WS_TABSTOP* = 0x00010000
@@ -839,10 +839,10 @@ const
   IDYES* = 6
 
 proc RGB*(r, g, b: int): COLORREF =
-  result = toU32(r) or (toU32(g) shl 8) or (toU32(b) shl 16)
+  result = cast[int32](r) or (cast[int32](g) shl 8) or (cast[int32](b) shl 16)
 
 proc RGB*(r, g, b: range[0 .. 255]): COLORREF =
-  result = toU32(r) or (toU32(g) shl 8) or (toU32(b) shl 16)
+  result = cast[int32](r) or (cast[int32](g) shl 8) or (cast[int32](b) shl 16)
 
 proc PALETTERGB*(r, g, b: range[0..255]): COLORREF =
   result = 0x02000000 or RGB(r, g, b)
@@ -851,31 +851,31 @@ proc PALETTEINDEX*(i: DWORD): COLORREF =
   result = COLORREF(0x01000000'i32 or i and 0xffff'i32)
 
 proc GetRValue*(rgb: COLORREF): int8 =
-  result = toU8(rgb)
+  result = int8(rgb)
 
 proc GetGValue*(rgb: COLORREF): int8 =
-  result = toU8(rgb shr 8)
+  result = int8(rgb shr 8)
 
 proc GetBValue*(rgb: COLORREF): int8 =
-  result = toU8(rgb shr 16)
+  result = int8(rgb shr 16)
 
 proc HIBYTE*(w: int32): int8 =
-  result = toU8(w shr 8'i32 and 0x000000FF'i32)
+  result = cast[int8](w shr 8'i32 and 0x000000FF'i32)
 
 proc HIWORD*(L: int32): int16 =
-  result = toU16(L shr 16'i32 and 0x0000FFFF'i32)
+  result = cast[int16](L shr 16'i32 and 0x0000FFFF'i32)
 
 proc LOBYTE*(w: int32): int8 =
-  result = toU8(w)
+  result = cast[int8](w)
 
 proc LOWORD*(L: int32): int16 =
-  result = toU16(L)
+  result = cast[int16](L)
 
 proc MAKELONG*(a, b: int32): LONG =
   result = a and 0x0000ffff'i32 or b shl 16'i32
 
 proc MAKEWORD*(a, b: int32): int16 =
-  result = toU16(a and 0xff'i32) or toU16(b shl 8'i32)
+  result = cast[int16](a and 0xff'i32) or cast[int16](b shl 8'i32)
 
 when defined(winUniCode):
   proc WC*(s: string): LPCWSTR =

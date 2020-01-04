@@ -4,7 +4,7 @@
 # (See accompanying file LICENSE.txt)
 #
 #-----------------------------------------
-import lexaccessor, scintilla
+import lexaccessor
 
 const maxState = 10
 
