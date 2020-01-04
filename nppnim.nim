@@ -5,8 +5,8 @@
 #
 #-----------------------------------------
 import
-  winapi, scintilla, nppmsg, menucmdid, support,
-  lexaccessor, stylecontext, sets, utils, strutils
+  winapi, scintilla, support, strutils,
+  lexaccessor, stylecontext, sets, utils
 
 when defined(cpu64):
   {.link: "resource/resource64.o".}
@@ -38,13 +38,14 @@ proc pluginInit(hModule: HMODULE) = discard
 # Here you can do the clean up, save the parameters (if any) for the next session
 proc pluginCleanUp() = discard
 
-proc getSciHandle(): SciHandle =
-  # Get the current scintilla
-  var which = -1
-  sendMessage(nppData.nppHandle, NPPM_GETCURRENTSCINTILLA, 0, cast[LPARAM](which.addr))
-  if which == -1: return
-  let curScintilla = if which == 0: nppData.sciMainHandle else: nppData.sciSecondHandle
-  result = initSciHandle(curScintilla)
+when false:
+  proc getSciHandle(): SciHandle =
+    # Get the current scintilla
+    var which = -1
+    sendMessage(nppData.nppHandle, NPPM_GETCURRENTSCINTILLA, 0, cast[LPARAM](which.addr))
+    if which == -1: return
+    let curScintilla = if which == 0: nppData.sciMainHandle else: nppData.sciSecondHandle
+    result = initSciHandle(curScintilla)
 
 #proc hello() {.cdecl.} =
   #Open a new document

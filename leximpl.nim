@@ -105,10 +105,11 @@ proc GetWordType(L: ptr LexAccessor, start, stop: int): WordType =
   kw.setLen(0)
   for i in start..<stop:
     kw.add L[][i]
-  if support.NimKeywords.contains(kw): return WT_KEYWORD
-  if support.NimTypes.contains(kw): return WT_TYPE
-  if support.NimCTypes.contains(kw): return WT_CTYPE
-  if support.NimMagic.contains(kw): return WT_MAGIC
+  let word = normalize(kw)
+  if support.NimKeywords.contains(word): return WT_KEYWORD
+  if support.NimTypes.contains(word): return WT_TYPE
+  if support.NimCTypes.contains(word): return WT_CTYPE
+  if support.NimMagic.contains(word): return WT_MAGIC
   result = WT_IDENT
 
 # this is Nim legacy
@@ -177,7 +178,7 @@ proc getString(sc: var StyleContext, rawMode: bool) =
         sc.forward()
   discard sc.popState()
 
-template DEFAULT_STATE_BODY: typed =
+template DEFAULT_STATE_BODY =
   case sc.ch
   of SymStartChars - {'r', 'R', 'l'}:
     sc.getSymbol()

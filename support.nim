@@ -108,16 +108,18 @@ let
     "tuple",
     "type",
     "using",
-    "unsafeAddr",
+    "unsafeaddr",
+    "unowned",
     "var",
     "when",
     "while",
     "with",
     "without",
     "xor",
-    "yield"].toSet()
+    "yield"].toHashSet()
 
   NimTypes* = [
+    "byte",
     "bool",
     "int",
     "uint",
@@ -146,10 +148,10 @@ let
     "untyped",
     "range",
     "array",
-    "openArray",
+    "openarray",
     "set",
     "varargs"
-  ].toSet()
+  ].toHashSet()
 
   NimCTypes* = [
     "csize",
@@ -167,18 +169,18 @@ let
     "cint",
     "cuint",
     "cstring",
-    "cstringArray"
-  ].toSet()
+    "cstringarray"
+  ].toHashSet()
 
   NimMagic* = [
     "defined",
     "declared",
-    "declaredInScope",
-    "definedInScope",
+    "declaredinscope",
+    "definedinscope",
     "new",
     "high",
     "low"
-  ].toSet()
+  ].toHashSet()
 
 type
   WordType* = enum
