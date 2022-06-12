@@ -35,17 +35,20 @@ type
 const
   #IDocument version
   dvOriginal* = 0
-  dvLineEnd* = 1
+  dvLineEnd*  = 1
+  dvRelease4* = 2
 
   #ILexer version
-  lvOriginal* = 0
+  lvOriginal*  = 0
   lvSubStyles* = 1
-  lvRelease4* = 2
+  lvRelease4*  = 2
+  lvRelease5*  = 3
 
 # Nim ver 0.13.0 use const, but 0.15.0 regression
 # force me to use let
 let
-  NimKeywords* = ["addr",
+  NimKeywords* = [
+    "addr",
     "and",
     "as",
     "asm",
@@ -186,7 +189,7 @@ type
   WordType* = enum
     WT_KEYWORD, WT_TYPE, WT_IDENT, WT_MAGIC, WT_CTYPE
 
-  VTABLE* = array[0..25, pointer]
+  VTABLE* = array[0..30, pointer]
 
   IDocument* {.pure, final.} = ptr object
     vTable: ptr VTABLE

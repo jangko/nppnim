@@ -10,7 +10,7 @@ if "%1"=="x64" goto nppnim64
 @echo building 32 bit version
 SET BASE=release\nppnim32
 SET TMPPATH=%PATH%
-SET PATH=e:\mingw32\mingw32\bin;f:\projects\new_nim\bin;%PATH%
+SET PATH=F:\mingw32\bin;%PATH%
 windres -i resource\resource.rc -F pe-i386 -o resource\resource32.o
 nim c -d:release --cpu:i386 -o:%BASE%\nppnim.dll nppnim
 strip %BASE%\nppnim.dll

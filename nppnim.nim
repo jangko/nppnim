@@ -198,13 +198,15 @@ const
     '|', '=', '%', '&', '$', '@', '~', ':', '\x80'..'\xFF'}
 
 const
-  lexer_ver {.strdefine.} = "release4"
+  lexer_ver {.strdefine.} = "release5"
 
 proc Version(lex: Lexer): cint {.stdcall.} =
   when lexer_ver == "original":
     lvOriginal
-  else:
+  elif lexer_ver == "release4":
     lvRelease4
+  else:
+    lvRelease5
 
 proc Release(lex: Lexer) {.stdcall.} = discard
 proc PropertyNames(lex: Lexer): cstring {.stdcall.} = nil
@@ -458,6 +460,14 @@ proc DescriptionOfStyle(lex: Lexer, style: cint): cstring {.stdcall.} =
   else:
     emptyString[0].unsafeAddr
 
+proc GetName(lex: Lexer): cstring {.stdcall.} =
+  "npp.nim.lexer".cstring
+
+proc GetIdentifier(lex: Lexer): cint {.stdcall.} = 0
+
+proc PropertyGet(lex: Lexer, key: cstring): cstring {.stdcall.} =
+  "".cstring
+
 proc GetLexerCount(): int {.stdcall, exportc, dynlib.} = 1
 
 proc GetLexerName(idx: int, name: pointer, nameLen: int) {.stdcall, exportc, dynlib.} =
@@ -500,8 +510,16 @@ proc lexFactory(): ptr ILexer {.stdcall.} =
   vTable[23] = TagsOfStyle
   vTable[24] = DescriptionOfStyle
 
+  # ILexer5
+  vTable[25] = GetName
+  vTable[26] = GetIdentifier
+  vTable[27] = PropertyGet
+
   lex.vTable = vTable.addr
   result = lex.addr
 
 proc GetLexerFactory(idx: int): LexerFactoryProc {.stdcall, exportc, dynlib.} =
   result = lexFactory
+
+proc CreateLexer(name: cstring): ptr ILexer {.stdcall, exportc, dynlib.} =
+  lexFactory()
